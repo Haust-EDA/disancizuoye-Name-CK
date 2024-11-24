@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "oled_ui.h": "c",
+        "key.h": "c",
+        "stm32f10x.h": "c",
+        "oled.h": "c"
+    }
+}

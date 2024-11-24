@@ -1,7 +1,9 @@
-#include "stm32f10x.h"                  // Device header
+#include "stm32f10x.h" // Device header
+#include "Control.h"
+#include "Gvar.h"
 #include "Timer.h"
-#include "Key.h"
-#include "OLED.h"
+#include "OLED_UI.h"
+
 
 void Init(void)
 {
@@ -9,28 +11,25 @@ void Init(void)
 	Timer_Init();
 	Key_Init();
 	OLED_Init();
-	
+
 	/*界面*/
-	OLED_ShowChar(1,1,'a');
-	OLED_ShowString(2,1,"Hello World!");
+	UI_MenuMain(&G_Choice_Index);
 }
 
 int main(void)
 {
 	Init();
-	while(1)
+	while (1)
 	{
-		
+		Control_Main();
 	}
 }
 void TIM2_IRQHandler(void)
 {
-	if(TIM_GetITStatus(TIM2,TIM_IT_Update)==SET)
+	if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET)
 	{
-		//功能代码区
-		Key_Tick();//刷新按键
-		TIM_ClearITPendingBit(TIM2,TIM_IT_Update);//清除中断标志位
+		// 功能代码区
+		Control_Tick();
+		TIM_ClearITPendingBit(TIM2, TIM_IT_Update); // 清除中断标志位
 	}
 }
-
-
