@@ -10,7 +10,7 @@
       <TargetName>Target 1</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -673,46 +673,6 @@
               <FileType>5</FileType>
               <FilePath>.\System\Timer.h</FilePath>
             </File>
-            <File>
-              <FileName>OLED.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\System\OLED.c</FilePath>
-            </File>
-            <File>
-              <FileName>OLED.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\System\OLED.h</FilePath>
-            </File>
-            <File>
-              <FileName>OLED_Font.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\System\OLED_Font.h</FilePath>
-            </File>
-            <File>
-              <FileName>Control.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\System\Control.c</FilePath>
-            </File>
-            <File>
-              <FileName>Control.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\System\Control.h</FilePath>
-            </File>
-            <File>
-              <FileName>GVar.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\System\GVar.c</FilePath>
-            </File>
-            <File>
-              <FileName>GVar.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\System\GVar.h</FilePath>
-            </File>
-            <File>
-              <FileName>GType.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\System\GType.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -729,24 +689,19 @@
               <FilePath>.\Hardware\Key.h</FilePath>
             </File>
             <File>
-              <FileName>OLED_UI.c</FileName>
+              <FileName>OLED.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Hardware\OLED_UI.c</FilePath>
+              <FilePath>.\Hardware\OLED.c</FilePath>
             </File>
             <File>
-              <FileName>OLED_UI.h</FileName>
+              <FileName>OLED.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Hardware\OLED_UI.h</FilePath>
+              <FilePath>.\Hardware\OLED.h</FilePath>
             </File>
             <File>
-              <FileName>LED.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\LED.c</FilePath>
-            </File>
-            <File>
-              <FileName>LED.h</FileName>
+              <FileName>OLED_Font.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Hardware\LED.h</FilePath>
+              <FilePath>.\Hardware\OLED_Font.h</FilePath>
             </File>
           </Files>
         </Group>

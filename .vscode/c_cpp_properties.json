@@ -3,11 +3,11 @@
         {
             "name": "Target 1",
             "includePath": [
-                "c:\\Users\\NameY\\Desktop\\disancizuoye-Name-CK\\Start",
-                "c:\\Users\\NameY\\Desktop\\disancizuoye-Name-CK\\Library",
-                "c:\\Users\\NameY\\Desktop\\disancizuoye-Name-CK\\User",
-                "c:\\Users\\NameY\\Desktop\\disancizuoye-Name-CK\\System",
-                "c:\\Users\\NameY\\Desktop\\disancizuoye-Name-CK\\Hardware",
+                "d:\\Name\\Code\\STM3202\\矩阵按键\\Start",
+                "d:\\Name\\Code\\STM3202\\矩阵按键\\Library",
+                "d:\\Name\\Code\\STM3202\\矩阵按键\\User",
+                "d:\\Name\\Code\\STM3202\\矩阵按键\\System",
+                "d:\\Name\\Code\\STM3202\\矩阵按键\\Hardware",
                 "C:\\Program Files (x86)\\Keil5\\ARM\\ARMCC\\include",
                 "C:\\Program Files (x86)\\Keil5\\ARM\\ARMCC\\include\\rw"
             ],

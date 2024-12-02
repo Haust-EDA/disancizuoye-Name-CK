@@ -1,35 +1,45 @@
-#include "stm32f10x.h" // Device header
-#include "Control.h"
-#include "Gvar.h"
+#include "stm32f10x.h"                  // Device header
+#include "Delay.h"
+#include "OLED.h"
 #include "Timer.h"
-#include "OLED_UI.h"
+#include "Key.h"
 
-
-void Init(void)
-{
-	/*硬件*/
-	Timer_Init();
-	Key_Init();
-	OLED_Init();
-
-	/*界面*/
-	UI_MenuMain(&G_Choice_Index);
-}
-
+uint16_t Num;//从外部引用变量
+uint8_t State;
+uint16_t Time;
 int main(void)
 {
-	Init();
-	while (1)
+
+	//LED_Init();
+	OLED_Init();
+	Timer_Init();
+	Key_Init();
+	OLED_ShowString(1,1,"Num=");
+	while(1)
 	{
-		Control_Main();
+		
+		Num=Key_GetNum(&State);
+		if(Num!=0)
+		{
+			OLED_ShowNum(1,5,Num,2);
+			OLED_ShowNum(2,1,State,2);
+		}
+		
+		
+		OLED_ShowNum(1,10,Time,5);
 	}
+	
 }
+/**
+ * @brief TIM2定时器，定时中断函数，周期1ms
+ */
 void TIM2_IRQHandler(void)
 {
-	if (TIM_GetITStatus(TIM2, TIM_IT_Update) == SET)
+	if(TIM_GetITStatus(TIM2,TIM_IT_Update)==SET)
 	{
-		// 功能代码区
-		Control_Tick();
-		TIM_ClearITPendingBit(TIM2, TIM_IT_Update); // 清除中断标志位
+		//功能代码区
+		Key_Tick();
+		Time++;
+		TIM_ClearITPendingBit(TIM2,TIM_IT_Update);//清除中断标志位
 	}
 }
