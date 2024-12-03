@@ -125,6 +125,7 @@ uint8_t Key_ScanRow(uint16_t GPIO_Pin_X)
 		Key_ScanNum = Temp + 3;
 	}
 	GPIO_SetBits(GPIOA, GPIO_Pin_X);
+	
 	return Key_ScanNum;
 }
 
