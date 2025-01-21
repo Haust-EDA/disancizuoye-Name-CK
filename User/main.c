@@ -1,45 +1,58 @@
 #include "stm32f10x.h"                  // Device header
 #include "Delay.h"
-#include "OLED.h"
+#include "LCD.h"
 #include "Timer.h"
 #include "Key.h"
 
-uint16_t Num;//从外部引用变量
-uint8_t State;
-uint16_t Time;
-int main(void)
-{
+#include "Control.h"
+uint32_t TimeTick=0;
+uint8_t KeyNum=0,KeyState=0;
 
-	//LED_Init();
-	OLED_Init();
+
+void Init(void){
+	LCD_Init();
 	Timer_Init();
 	Key_Init();
-	OLED_ShowString(1,1,"Num=");
-	while(1)
-	{
-		
-		Num=Key_GetNum(&State);
-		if(Num!=0)
-		{
-			OLED_ShowNum(1,5,Num,2);
-			OLED_ShowNum(2,1,State,2);
-		}
-		
-		
-		OLED_ShowNum(1,10,Time,5);
-	}
-	
+	LCD_Fill(0,0,160,128,WHITE);
+	C_MenuShow();
 }
-/**
- * @brief TIM2定时器，定时中断函数，周期1ms
- */
-void TIM2_IRQHandler(void)
+
+int main(void){
+	Init();
+	while(1){
+		LCD_ShowIntNum(147,115*0,TimeTick/100,2,BLACK,WHITE,12);
+		//刷新键值
+		KeyNum=Key_GetNum(&KeyState);
+		if(KeyNum!=0){
+			LCD_ShowIntNum(0,0,KeyNum,2,BLACK,WHITE,24);
+			LCD_ShowIntNum(24,0,KeyState,2,BLACK,WHITE,24);
+			switch (C_ShowIndex)
+			{
+			case 0:
+				C_MenuKey();
+				break;
+			case 3:
+				C_SWKey();
+				break;
+			default:
+				break;
+			}
+		}
+		//刷新屏幕
+		C_ShowRe();
+	}
+}
+
+void TIM3_IRQHandler(void)
 {
-	if(TIM_GetITStatus(TIM2,TIM_IT_Update)==SET)
+	if(TIM_GetITStatus(TIM3,TIM_IT_Update)==SET)
 	{
 		//功能代码区
 		Key_Tick();
-		Time++;
-		TIM_ClearITPendingBit(TIM2,TIM_IT_Update);//清除中断标志位
+		TimeTick++;
+		
+		TIM_ClearITPendingBit(TIM3,TIM_IT_Update);//清除中断标志位
 	}
 }
+
+

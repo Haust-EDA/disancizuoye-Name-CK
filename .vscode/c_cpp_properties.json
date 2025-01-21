@@ -1,18 +1,17 @@
 {
     "configurations": [
         {
-            "name": "Target 1",
+            "name": "Target",
             "includePath": [
-                "d:\\Name\\Code\\STM3202\\矩阵按键\\Start",
-                "d:\\Name\\Code\\STM3202\\矩阵按键\\Library",
-                "d:\\Name\\Code\\STM3202\\矩阵按键\\User",
-                "d:\\Name\\Code\\STM3202\\矩阵按键\\System",
-                "d:\\Name\\Code\\STM3202\\矩阵按键\\Hardware",
+                "${workspaceFolder}/**",
                 "C:\\Program Files (x86)\\Keil5\\ARM\\ARMCC\\include",
                 "C:\\Program Files (x86)\\Keil5\\ARM\\ARMCC\\include\\rw"
             ],
             "defines": [
                 "USE_STDPERIPH_DRIVER",
+                "STM32F10X_MD",//C8T6
+                //"STM32F10X_MD",//C8T6
+                //以下定义从C8T6复制而来
                 "__CC_ARM",
                 "__arm__",
                 "__align(x)=",
@@ -85,6 +84,7 @@
                 "__wfi()=",
                 "__yield()=",
                 "__vfp_status(x,y)=0"
+                
             ],
             "intelliSenseMode": "${default}"
         }

@@ -1,30 +1,18 @@
 /**
- * 最后一次改动时间: 2024-12-2
- * 按键排布以及引脚定义
- * 			 PB4|C1	PB5|C2	PB6|C3	PB7|C4
- * 	PA11|R1	 1      2       3       4
- * 	PA10|R2	 5      6       7       8
- * 	PA9 |R3  9      10      11      12
- * 	PA8 |R4  13     14      15      16
- * 
- * 使用说明
- *  需要使 Key_Tick() 函数每隔 1ms 调用一次，更新按键状态；
- * 
- * 	Key_GetNum(State) 函数获取按键值，返回值范围为 0~16;
- *   -原形 uint8_t Key_GetNum(uint8_t *State)
- *   -输入参数 *State: 按键状态(0:无按键,1:短按,2:长按)
- *   -返回值: 按键值(0~16)
- *   ---函数调用后 键值清零，状态清零，时间清零；
- * 
- *  修改 KEYSETTIME 值来改变长按最低时间(单位m,最好为20的整数倍)
- * 
- * 目前存在的问题:
- *  1.当快速连续的短按同一个按键多次时有概率判断为长按
- */
+ * 				PB4	PB5	PB6	PB7
+ *				C1	C2	C3	C4
+ *	PA11	R1	1	2	3	4
+ *	PA10	R2	5	6	7	8
+ *	PA9		R3	9	10	11	12
+ *	PA8		R4	13	14	15	16
+ *	
+ *
+ *	
+ **/
 
 #include "stm32f10x.h" // Device header
 
-#define KEYSETTIME 400 // 长按最低时间
+#define KEYSETTIME 500 // 长按最低时间
 
 // 管脚定义
 #define C1 GPIO_Pin_4 // GPIOB
@@ -66,7 +54,8 @@ void Key_Init(void)
 
 /**
  *@brief 取键值
- *@retval 0->NULL;1->Key1;2->Key2
+ *@param State 按键状态(0:无按键,1:短按,2:长按)
+ *@retval 0	NULL
  **/
 uint8_t Key_GetNum(uint8_t *State)
 {
@@ -125,7 +114,6 @@ uint8_t Key_ScanRow(uint16_t GPIO_Pin_X)
 		Key_ScanNum = Temp + 3;
 	}
 	GPIO_SetBits(GPIOA, GPIO_Pin_X);
-	
 	return Key_ScanNum;
 }
 
