@@ -48,6 +48,8 @@
         "string.h": "c",
         "oled.h": "c",
         "cstdint": "cpp",
-        "stm32f10x_conf.h": "c"
+        "stm32f10x_conf.h": "c",
+        "calculator.h": "c",
+        "cstdlib": "c"
     }
 }

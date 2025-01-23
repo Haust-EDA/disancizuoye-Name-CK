@@ -748,6 +748,16 @@
               <FileType>5</FileType>
               <FilePath>..\Software\Stopwatch.h</FilePath>
             </File>
+            <File>
+              <FileName>Calculator.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Software\Calculator.c</FilePath>
+            </File>
+            <File>
+              <FileName>Calculator.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Software\Calculator.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

@@ -10,7 +10,10 @@ extern uint8_t C_ShowIndex;
 void C_MenuShow(void);//菜单显示
 void C_MenuKey(void);//菜单按键处理
 /*------------  计算器  ------------*/
+
 void C_CalShow(void);
+void C_CalKey(void);
+
 
 /*------------  秒表    ------------*/
 

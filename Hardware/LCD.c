@@ -70,7 +70,8 @@ void LCD_Writ_Bus(uint8_t dat)
 	LCD_CS_Clr();
 
 	// 2. 发送数据到 SPI
-	SPI_I2S_SendData(SPI1, dat); // 将数据写入 SPI 数据寄存器，启动发送
+	SPI1->DR = dat;
+	//SPI_I2S_SendData(SPI1, dat); // 将数据写入 SPI 数据寄存器，启动发送
 
 	// 3. 等待数据传输完成
 	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)

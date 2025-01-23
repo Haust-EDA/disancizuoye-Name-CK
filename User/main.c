@@ -15,6 +15,7 @@ void Init(void){
 	Key_Init();
 	LCD_Fill(0,0,160,128,WHITE);
 	C_MenuShow();
+	LCD_ShowChar(0,0,'1',BLACK,WHITE,24,0);
 }
 
 int main(void){
@@ -24,12 +25,15 @@ int main(void){
 		//刷新键值
 		KeyNum=Key_GetNum(&KeyState);
 		if(KeyNum!=0){
-			LCD_ShowIntNum(0,0,KeyNum,2,BLACK,WHITE,24);
-			LCD_ShowIntNum(24,0,KeyState,2,BLACK,WHITE,24);
+			//LCD_ShowIntNum(0,0,KeyNum,2,BLACK,WHITE,24);
+			//LCD_ShowIntNum(24,0,KeyState,2,BLACK,WHITE,24);
 			switch (C_ShowIndex)
 			{
 			case 0:
 				C_MenuKey();
+				break;
+			case 2:
+				C_CalKey();
 				break;
 			case 3:
 				C_SWKey();
