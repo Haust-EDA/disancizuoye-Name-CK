@@ -79,6 +79,9 @@ void C_CalShow(void) // C_ShowIndex->1
 	LCD_ShowString(0, 0, "Calculator", GREEN, WHITE, 12, 0); // 标题
 	LCD_ShowString(0, 10, "<", BLACK, WHITE, 24, 0);
 }
+/**
+ * @brief 显示内容刷新
+ */
 void C_CalShowRe(void)
 {
 	if (C_Cal_State == 1)
@@ -103,19 +106,24 @@ void C_CalShowRe(void)
 		LCD_ShowChar(show_x, show_y, c, BLACK, WHITE, 24, 0);
 	}
 }
+/**
+ * @brief 显示结果
+ */
 void C_Cal_ShowRes(void)
 {
 	if (Cal_Run() == 0)
 	{
+
 		long long int temp = (CalResult > 0) ? (long long int)CalResult : (long long int)(-CalResult);
-		uint8_t Num = 0;
+		uint8_t Num = 0; // 结果的位数
 		while (temp > 0)
 		{
 			temp /= 10;
 			Num++;
 		}
 		Num += 3;
-		if(Num>19)
+
+		if (Num > 19)
 		{
 			LCD_ShowString(0, 10 + 22 * 4, "ERR:TOO LONG", RED, WHITE, 24, 0);
 		}
@@ -232,6 +240,9 @@ void C_SWShowTime0(void)
 	LCD_ShowString(15 + 16 * 0, 10, Strf("%02d:", min), BLACK, WHITE, 32, 0);		   // 显示分
 	LCD_ShowString(15 + 16 * 3, 10, Strf("%02d.%02d", sec, msec), BLUE, WHITE, 32, 0); // 显示秒
 }
+/**
+ * @brief 显示记录的时间
+ */
 void C_SWShowTimes(void)
 {
 	uint8_t num = C_SWShow_TIndex;
@@ -336,6 +347,9 @@ void C_SWKey(void)
 
 /*	通用	*/
 
+/**
+ * @brief 格式化字符串
+ */
 uint8_t *Strf(char *format, ...)
 {
 	static char String[255];

@@ -1,5 +1,15 @@
 #ifndef __LCDFONT_H
 #define __LCDFONT_H 	   
+/**
+ * 
+ * 	Size	Width	Height
+ * 	12		6		8
+ * 	16		8		16
+ * 	24		12		24
+ * 	32		16		32
+ * 
+ */
+
 
 const unsigned char ascii_1206[][12]={
 
