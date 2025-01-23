@@ -167,8 +167,11 @@ void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 
 void LCD_Init(void)
 {
-	LCD_GPIO_Init(); // 初始化GPIO
+	//先初始化SPI再初始化GPIO
 	LCD_SPI_Init();	 // 初始化SPI(及其GPIO)
+	LCD_GPIO_Init(); // 初始化GPIO
+	
+	
 
 	LCD_RES_Clr(); // 复位
 	Delay_ms(100);

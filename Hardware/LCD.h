@@ -5,13 +5,13 @@
 //----------------TFT端口定义-----------------
 /***************根据自己需求更改****************/
 // *任意GPIO端口定义
-// (MCU)PA1 -> (TFT)BLK
+// (MCU)PC13 -> (TFT)BLK
 #define LCD_BLK_GPIO_PORT GPIOC
 #define LCD_BLK_GPIO_PIN GPIO_Pin_13
-// (MCU)PA2 -> (TFT)CS
+// (MCU)PC14 -> (TFT)CS
 #define LCD_CS_GPIO_PORT GPIOC
 #define LCD_CS_GPIO_PIN GPIO_Pin_14
-// (MCU)PA3 -> (TFT)DC
+// (MCU)PC15 -> (TFT)DC
 #define LCD_DC_GPIO_PORT GPIOC
 #define LCD_DC_GPIO_PIN GPIO_Pin_15
 // (MCU)PA4 -> (TFT)RST
