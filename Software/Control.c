@@ -1,9 +1,10 @@
 #include "stm32f10x.h"
 #include "LCD.h"
-#include "Control.h"
 #include "Delay.h"
-#include "Stopwatch.h"
+#include "Control.h"
+#include "LED.h"
 #include "Calculator.h"
+#include "Stopwatch.h"
 
 uint8_t C_ShowIndex = 0; // 当前显示页面编号
 
@@ -12,8 +13,8 @@ extern uint8_t KeyNum;
 extern uint8_t KeyState;
 
 /****************************************************************/
-/*  主菜单  */
-uint8_t C_MenuShow_Index = 1;
+/*	主菜单	*/
+uint8_t C_MenuShow_Index = 0;
 /**
  * @brief 显示主菜单
  */
@@ -48,6 +49,11 @@ void C_MenuKey(void)
 	case 15: // 进入
 		switch (C_MenuShow_Index)
 		{
+		case 0:
+			C_ShowIndex = 1;
+			LCD_Fill(0, 0, 160, 128, WHITE);
+			C_LEDShow();
+			break;
 		case 1:
 			C_ShowIndex = 2;
 			LCD_Fill(0, 0, 160, 128, WHITE);
@@ -68,12 +74,148 @@ void C_MenuKey(void)
 }
 
 /****************************************************************/
+/*	LED		*/
+void C_LEDShowData(void);
+uint8_t C_LEDShow_Index = 0;
+
+void C_LEDShow(void) // C_ShowIndex->1
+{
+	LCD_ShowString(0, 0, "LED", GREEN, WHITE, 12, 0); // 标题
+	LCD_ShowString(5 + 8, 15 + 22 * 0, "C_Mode", BLACK, WHITE, 16, 0);
+	LCD_ShowString(5 + 8, 15 + 22 * 1, "C_Dir", BLACK, WHITE, 16, 0);
+	LCD_ShowString(5 + 8, 15 + 22 * 2, "C_Speed", BLACK, WHITE, 16, 0);
+	LCD_ShowString(5 + 8, 15 + 22 * 3, "B_Mode", BLACK, WHITE, 16, 0);
+	C_LEDShowData();
+}
+void C_LEDShowData(void)
+{
+
+	for (uint8_t i = 0; i < 4; i++)
+	{
+		LCD_ShowChar(5, 15 + 22 * i, (i == C_LEDShow_Index) ? '>' : ' ', BLACK, WHITE, 16, 0);
+		LCD_ShowString(5 + 8 * 10, 15 + 22 * i, "<     >", (i == C_LEDShow_Index) ? RED : BLACK, WHITE, 16, 0);
+	}
+	// CMode
+	switch (LEDCMode)
+	{
+	case 0:
+		LCD_ShowString(5 + 8 * 12, 15 + 22 * 0, "OFF", BLACK, WHITE, 16, 0);
+		break;
+	case 1:
+		LCD_ShowChar(5 + 8 * 13, 15 + 22 * 0, '1', BLACK, WHITE, 16, 0);
+		break;
+	case 2:
+		LCD_ShowChar(5 + 8 * 13, 15 + 22 * 0, '2', BLACK, WHITE, 16, 0);
+		break;
+	case 3:
+		LCD_ShowChar(5 + 8 * 13, 15 + 22 * 0, '3', BLACK, WHITE, 16, 0);
+		break;
+	case 4:
+		LCD_ShowChar(5 + 8 * 13, 15 + 22 * 0, '4', BLACK, WHITE, 16, 0);
+		break;
+	case 5:
+		LCD_ShowString(5 + 8 * 12.5, 15 + 22 * 0, "ON", BLACK, WHITE, 16, 0);
+		break;
+	default:
+		break;
+	}
+	// CDir
+	if (LEDCDir == 0)
+	{
+		LCD_ShowString(5 + 8 * 12.5, 15 + 22 * 1, "CW", BLACK, WHITE, 16, 0);
+	}
+	else
+	{
+		LCD_ShowString(5 + 8 * 12, 15 + 22 * 1, "CCW", BLACK, WHITE, 16, 0);
+	}
+	// CSpeed
+	LCD_ShowString(5 + 8 * 12.5, 15 + 22 * 2, Strf("%0.2d", LEDCSpeed), BLACK, WHITE, 16, 0);
+	// BMode
+	switch (LEDBMode)
+	{
+	case 0:
+		LCD_ShowString(5 + 8 * 12, 15 + 22 * 3, "OFF", BLACK, WHITE, 16, 0);
+		break;
+	case 1:
+		LCD_ShowChar(5 + 8 * 13, 15 + 22 * 3, '1', BLACK, WHITE, 16, 0);
+		break;
+	case 2:
+		LCD_ShowChar(5 + 8 * 13, 15 + 22 * 3, '2', BLACK, WHITE, 16, 0);
+		break;
+	default:
+		break;
+	}
+}
+void C_LEDKey(void)
+{
+	if (KeyNum == 14 && KeyState == 2) // 长按退出
+	{
+		C_ShowIndex = 0;
+		LCD_Fill(0, 0, 160, 128, WHITE);
+		C_MenuShow();
+		return;
+	}
+
+	switch (KeyNum)
+	{
+	case 5: // 左
+		switch (C_LEDShow_Index)
+		{
+		case 0: // C_Mode
+			LEDCMode = (LEDCMode - 1 + 6) % 6;
+			break;
+		case 1: // C_Dir
+			LEDCDir = (LEDCDir - 1 + 2) % 2;
+			break;
+		case 2: // C_Speed
+			LEDCSpeed = (LEDCSpeed - 2 + 99) % 99 + 1;
+			break;
+		case 3: // B_Mode
+			LEDBMode = (LEDBMode - 1 + 3) % 3;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case 7: // 右
+		switch (C_LEDShow_Index)
+		{
+		case 0: // C_Mode
+			LEDCMode = (LEDCMode + 1) % 6;
+			break;
+		case 1: // C_Dir
+			LEDCDir = (LEDCDir + 1) % 2;
+			break;
+		case 2: // C_Speed
+			LEDCSpeed = LEDCSpeed % 99 + 1;
+			break;
+		case 3: // B_Mode
+			LEDBMode = (LEDBMode + 1) % 3;
+			break;
+		default:
+			break;
+		}
+		break;
+	case 2: // 上
+		C_LEDShow_Index = (C_LEDShow_Index - 1 + 4) % 4;
+		break;
+	case 10: // 下
+		C_LEDShow_Index = (C_LEDShow_Index + 1) % 4;
+		break;
+	default:
+		break;
+	}
+	C_LEDShowData();
+}
+
+/****************************************************************/
 /*	计算器	*/
 #define _C_CAL_SHOW_ROW 4  // 行数
 #define _C_CAL_SHOW_COL 10 // 列数
 uint8_t C_Cal_State = 0;   // 计算器状态
 
-void C_CalShow(void) // C_ShowIndex->1
+void C_CalShow(void) // C_ShowIndex->2
 {
 	C_Cal_State = 1;
 	LCD_ShowString(0, 0, "Calculator", GREEN, WHITE, 12, 0); // 标题
@@ -365,7 +507,7 @@ uint8_t *Strf(char *format, ...)
 /**
  * @brief 刷新屏幕内容
  */
-void C_ShowRe(void)
+void C_Refresh(void)
 {
 	if (C_ShowIndex == 3 && SW_Flag == 1)
 	{
