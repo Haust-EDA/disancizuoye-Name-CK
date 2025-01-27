@@ -15,20 +15,20 @@
 #define GPIN_LED7 GPIO_Pin_14
 #define GPIN_LED8 GPIO_Pin_15
 
-#define LEDOC1(x) TIM_SetCompare1(TIM2, x)
-#define LEDOC2(x) TIM_SetCompare2(TIM2, x)
-#define LEDOC3(x) TIM_SetCompare3(TIM2, x)
-#define LEDOC4(x) TIM_SetCompare4(TIM2, x)
+#define LEDOC1(x) TIM_SetCompare4(TIM2, x)
+#define LEDOC2(x) TIM_SetCompare3(TIM2, x)
+#define LEDOC3(x) TIM_SetCompare2(TIM2, x)
+#define LEDOC4(x) TIM_SetCompare1(TIM2, x)
 
 extern uint32_t TimeTick;
-uint32_t TimeStart = 0;
+uint32_t LED_TimeStart = 0;
 
-uint8_t LEDIndex = 1;
+uint8_t LEDIndex = 1; // 当前LED序号(1-8)
 
-uint8_t LEDCMode = 0;  // 流水灯模式(0:常闭;1;2;3;4;5:常亮)
-uint8_t LEDCDir = 0;   // 流水灯方向(0:顺;1:逆)
-uint8_t LEDCSpeed = 5; // 流水灯速度(*100ms)
-uint8_t LEDBMode = 0;  // 呼吸灯模式(0:关闭;1:同步;2:跟随)
+uint8_t LEDCMode = 0;	// 流水灯模式(0:常闭;1;2;3;4;5:常亮)
+uint8_t LEDCDir = 0;	// 流水灯方向(0:顺;1:逆)
+uint8_t LEDCSpeed = 10; // 流水灯速度(*100ms)
+uint8_t LEDBMode = 0;	// 呼吸灯模式(0:关闭;1:同步;2:跟随)
 
 void LED_PWMInit(void)
 {
@@ -65,7 +65,7 @@ void LED_PWMInit(void)
 	/*配置 GPIO*/
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP; // 使用推挽输出，接入外设
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
@@ -92,7 +92,13 @@ void LED_Init(void)
 {
 	LED_PWMInit();
 	LED_GPIOInit();
+
+	LED_SetCMode(0);  // 常闭
+	LED_SetCDir(0);	  // 顺
+	LED_SetCSpeed(8); // 速度800ms
+	LED_SetBMode(0);  // 关闭
 }
+
 /**
  * @brief  设置LED状态
  * @param  index LED序号
@@ -100,7 +106,14 @@ void LED_Init(void)
  */
 void LED_Set(uint8_t index, uint8_t state)
 {
-	state = ~state;
+	if (state == 0)
+	{
+		state = 1;
+	}
+	else
+	{
+		state = 0;
+	}
 	switch (index)
 	{
 	case 1:
@@ -133,12 +146,17 @@ void LED_Set(uint8_t index, uint8_t state)
 }
 /**
  * @brief  设置LED PWM输出
- * @param  index LED序号
+ * @param  index LED序号(1-4)
  * @param  value PWM输出值(0~100)
  * @return 无
  */
 void LED_SetOC(uint8_t index, uint8_t value)
 {
+	if (value >= 100)
+	{
+		value = 99;
+	}
+
 	switch (index)
 	{
 	case 1:
@@ -167,25 +185,17 @@ void LED_Refresh(void)
 	{
 		return;
 	}
-	uint16_t time = TimeTick - TimeStart;
+	uint32_t time = TimeTick - LED_TimeStart;
 	if (time >= LEDCSpeed * 100)
 	{
-		TimeStart = TimeTick;
+		LED_TimeStart = TimeTick;
 		if (LEDCDir == 0)
 		{
-			LEDIndex--;
+			LEDIndex = (LEDIndex) % 8 + 1;
 		}
 		else
 		{
-			LEDIndex++;
-		}
-		if (LEDIndex > 8)
-		{
-			LEDIndex -= 8;
-		}
-		else if (LEDIndex < 1)
-		{
-			LEDIndex += 8;
+			LEDIndex = (LEDIndex - 2 + 8) % 8 + 1;
 		}
 	}
 	// 流水灯设置
@@ -193,22 +203,22 @@ void LED_Refresh(void)
 	{
 		for (uint8_t i = 0; i < LEDCMode; i++) // 设置亮
 		{
-			LED_Set((LEDIndex + i) % 8 + 1, 1);
+			LED_Set((LEDIndex - i + 8 - 1) % 8 + 1, 1);
 		}
-		for (uint8_t i = 0; i < (8 - LEDCMode); i++) // 设置灭
+		for (uint8_t i = 1; i < (8 - LEDCMode + 1); i++) // 设置灭
 		{
-			LED_Set((LEDIndex - i) % 8 + 1, 0);
+			LED_Set((LEDIndex + i + 8 - 1) % 8 + 1, 0);
 		}
 	}
 	else if (LEDCDir == 1)
 	{
 		for (uint8_t i = 0; i < LEDCMode; i++) // 设置亮
 		{
-			LED_Set((LEDIndex - i) % 8 + 1, 1);
+			LED_Set((LEDIndex + i + 8 - 1) % 8 + 1, 1);
 		}
-		for (uint8_t i = 0; i < (8 - LEDCMode); i++) // 设置灭
+		for (uint8_t i = 1; i < (8 - LEDCMode + 1); i++) // 设置灭
 		{
-			LED_Set((LEDIndex + i) % 8 + 1, 0);
+			LED_Set((LEDIndex - i + 8 - 1) % 8 + 1, 0);
 		}
 	}
 	// 呼吸灯设置
@@ -218,19 +228,11 @@ void LED_Refresh(void)
 	case 0: // 关闭
 		for (uint8_t i = 1; i <= 4; i++)
 		{
-			LED_SetOC(i, 0);
+			LED_SetOC(i, 100);
 		}
 		break;
 	case 1: // 同步
-
-		if (time < (LEDCSpeed * 100 / 2))
-		{
-			ccr = 100 * (time / (LEDCSpeed * 100 / 2));
-		}
-		else
-		{
-			ccr = 100 - 100 * (time / (LEDCSpeed * 100 / 2));
-		}
+		ccr = (time < (LEDCSpeed * 100 / 2)) ? 2 * time / LEDCSpeed : 100 - (2 * time - LEDCSpeed * 100) / LEDCSpeed;
 		for (uint8_t i = 1; i <= 4; i++)
 		{
 			LED_SetOC(i, ccr);
@@ -239,8 +241,16 @@ void LED_Refresh(void)
 	case 2: // 跟随
 		for (uint8_t i = 0; i < LEDCMode; i++)
 		{
-			uint8_t ccr = 100 * (time / (LEDCSpeed * 100)) * (LEDCMode - i) / LEDCMode;
-			uint8_t index = (LEDCDir == 1) ? (LEDIndex + i) % 4 + 1 : (LEDIndex - i) % 4 + 1;
+			ccr = 100 * ((float)(LEDCMode - i) / (float)LEDCMode) - 100 / LEDCMode * ((float)time / ((float)LEDCSpeed * 100));
+			uint8_t index;
+			if (LEDCDir == 0)
+			{
+				index = (LEDIndex - i - 1 + 4) % 4 + 1;
+			}
+			else
+			{
+				index = (LEDIndex + i - 1 + 4) % 4 + 1;
+			}
 			LED_SetOC(index, ccr);
 		}
 		break;
@@ -249,34 +259,68 @@ void LED_Refresh(void)
 	}
 }
 
+/**
+ * @brief 设置流水灯模式
+ * @param mode 0:常闭;1;2;3;4;5:常亮
+ * @return 无
+ */
 void LED_SetCMode(uint8_t mode)
 {
 	LEDCMode = mode;
-	if (LEDCMode == 0)
+	if (LEDCMode == 0) // 常闭
 	{
 		for (uint8_t i = 1; i <= 8; i++)
 		{
 			LED_Set(i, 0);
 		}
 	}
-	else if (LEDCMode == 5)
+	else if (LEDCMode == 5) // 常亮
 	{
-		for (uint8_t i = 1; i <= 8; i++)
+		for (uint8_t i = 1; i <= 8; i++) //
 		{
 			LED_Set(i, 1);
 		}
+		for (uint8_t i = 1; i <= 4; i++)
+		{
+			LED_SetOC(i, 100);
+		}
+		LED_SetBMode(0);
 	}
 }
 
+/**
+ * @brief 设置流水灯方向
+ * @param dir 0:顺;1:逆
+ * @return 无
+ */
 void LED_SetCDir(uint8_t dir)
 {
 	LEDCDir = dir;
 }
+
+/**
+ * @brief 设置流水灯速度
+ * @param speed 速度(*100ms)(取值1-99)
+ * @return 无
+ */
 void LED_SetCSpeed(uint8_t speed)
 {
 	LEDCSpeed = speed;
 }
+
+/**
+ * @brief 设置呼吸灯模式
+ * @param mode 0:关闭;1:同步;2:跟随
+ * @return 无
+ */
 void LED_SetBMode(uint8_t mode)
 {
+	if (mode == 0) // 关闭
+	{
+		for (uint8_t i = 1; i <= 4; i++)
+		{
+			LED_SetOC(i, 100);
+		}
+	}
 	LEDBMode = mode;
 }

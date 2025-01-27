@@ -3,10 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
+
+#define MAX_STACK_SIZE 20
 
 char CalStrIn[STRIN_MAX_LENGTH] = ""; // 输入的字符串
-uint8_t CalStrIn_Index = 0;           // 输入字符串索引
-double CalResult = 0;                 // 计算结果
+uint8_t CalStrIn_Index = 0;			  // 输入字符串索引
+double CalResult = 0;				  // 计算结果
+
+char CalHStr[CAL_MAX_HISTORY][STRIN_MAX_LENGTH];
+uint8_t CalHStrIndex[CAL_MAX_HISTORY];
+double CalHRes[CAL_MAX_HISTORY];
+uint8_t CalHIndex = 0; // 历史记录索引
 
 /**
  * @brief 向CalStrIn中添加字符
@@ -37,16 +45,92 @@ void Cal_Exit(void)
 	CalStrIn[0] = '\0';
 }
 
-// 判断字符是否为运算符
-int is_operator(char c)
+/**
+ * @brief 添加历史记录
+ */
+uint8_t Cal_HistoryAdd(void)
 {
-	return (c == '+' || c == '-' || c == '*' || c == '/');
+	if (CalHIndex >= CAL_MAX_HISTORY)
+	{
+		for (uint8_t i = 1; i < CAL_MAX_HISTORY; i++)
+		{
+			strcpy(CalHStr[i - 1], CalHStr[i]);
+			CalHStrIndex[i - 1] = CalHStrIndex[i];
+			CalHRes[i - 1] = CalHRes[i];
+		}
+	}
+	strcpy(CalHStr[CalHIndex], CalStrIn);
+	CalHStrIndex[CalHIndex] = CalStrIn_Index;
+	CalHRes[CalHIndex] = CalResult;
+	CalHIndex = CalHIndex % CAL_MAX_HISTORY + 1;
+	return CalHIndex;
 }
 
-// 计算两个数字的运算结果
-double compute(double a, double b, char operator, uint8_t * valid)
+// 栈的数据结构
+typedef struct
 {
-	switch (operator)
+	double stack[MAX_STACK_SIZE]; // 存储栈中的元素
+	int top;					  // 栈顶指针
+} Stack;
+
+// 栈相关操作函数
+void initStack(Stack *s)
+{
+	s->top = -1; // 初始化栈为空
+}
+
+int isEmpty(Stack *s)
+{
+	return s->top == -1; // 栈是否为空
+}
+
+int isFull(Stack *s)
+{
+	return s->top == MAX_STACK_SIZE - 1; // 栈是否满
+}
+
+void push(Stack *s, double value)
+{
+	if (!isFull(s))
+	{
+		s->stack[++(s->top)] = value; // 将元素压入栈
+	}
+}
+
+double pop(Stack *s)
+{
+	if (!isEmpty(s))
+	{
+		return s->stack[(s->top)--]; // 从栈中弹出元素
+	}
+	return -1; // 错误值
+}
+
+double peek(Stack *s)
+{
+	if (!isEmpty(s))
+	{
+		return s->stack[s->top]; // 返回栈顶元素
+	}
+	return -1; // 错误值
+}
+
+// 运算符优先级函数
+int precedence(char op)
+{
+	if (op == '^')
+		return 3; // 指数运算优先级最高
+	if (op == '*' || op == '/')
+		return 2; // 乘法和除法次之
+	if (op == '+' || op == '-')
+		return 1; // 加法和减法最低
+	return 0;
+}
+
+// 执行运算的函数
+double applyOp(double a, double b, char op)
+{
+	switch (op)
 	{
 	case '+':
 		return a + b;
@@ -55,87 +139,158 @@ double compute(double a, double b, char operator, uint8_t * valid)
 	case '*':
 		return a * b;
 	case '/':
-		if (b == 0)
-		{
-			*valid = 0; // 设置valid为0表示非法
-			return 0.0; // 除以零，返回错误值
-		}
 		return a / b;
-	default:
-		return 0.0;
+	case '^':
+		return pow(a, b); // 执行指数运算
 	}
+	return 0;
 }
 
-// 检查并计算表达式
-double evaluate_expression(const char *expr, uint8_t *valid)
+// 检查表达式是否合法，并将数字和运算符压入栈
+int isValidAndPushToStack(const char *expression, Stack *values, Stack *ops)
 {
-	double result = 0.0;
-	double current_number = 0.0;
-	char operator= '+';
+	int len = strlen(expression);
 	int i = 0;
-	*valid = 1; // 默认合法
+	char token[50]; // 用于存储数字
+	int tokenIndex = 0;
+	int prevCharIsOperatorOrOpenParen = 1; // 前一个字符是否是运算符或左括号
 
-	// 验证表达式最后是否为'='
-	int len = strlen(expr);
-	if (expr[len - 1] != '=')
+	while (i < len)
 	{
-		*valid = 0;
-		return 0.0;
-	}
+		char current = expression[i];
 
-	// 执行表达式的计算，去掉最后的'='
-	while (expr[i] != '\0' && expr[i] != '=')
-	{
-		if (isdigit(expr[i]) || expr[i] == '.')
+		// 跳过空格
+		if (current == ' ')
 		{
-			// 提取当前数字（支持浮点数）
-			current_number = strtod(&expr[i], NULL);
-			// 移动指针，跳过数字部分
-			while (isdigit(expr[i]) || expr[i] == '.')
+			i++;
+			continue;
+		}
+
+		// 如果是数字或负号，处理数字
+		if (isdigit(current) || current == '.' || (current == '-' && (i == 0 || strchr("+-*/^(", expression[i - 1]))))
+		{
+			tokenIndex = 0;
+			if (current == '-')
 			{
+				token[tokenIndex++] = current;
 				i++;
 			}
-			// 根据上一个运算符计算
-			result = compute(result, current_number, operator, valid);
-
-			if (*valid == 0)
+			while (isdigit(expression[i]) || expression[i] == '.')
 			{
-				return 0.0; // 如果遇到非法操作（如除以零），提前返回
+				token[tokenIndex++] = expression[i++];
 			}
+			token[tokenIndex] = '\0';
+
+			// 将数字压入栈
+			push(values, atof(token));
+			prevCharIsOperatorOrOpenParen = 0;
 		}
-		else if (is_operator(expr[i]))
+		// 处理乘法、除法、指数运算符
+		else if (strchr("*/^", current))
 		{
-			// 当前字符是运算符
-			operator= expr[i];
+			if (prevCharIsOperatorOrOpenParen)
+				return 0; // 如果前一个是运算符或左括号，表达式不合法
+			while (!isEmpty(ops) && precedence(peek(ops)) >= precedence(current))
+			{
+				double val2 = pop(values);
+				double val1 = pop(values);
+				char op = (char)pop(ops);
+				push(values, applyOp(val1, val2, op)); // 执行运算
+			}
+			push(ops, current); // 将运算符压入栈
+			prevCharIsOperatorOrOpenParen = 1;
 			i++;
 		}
-		else if (isspace(expr[i]))
+		// 处理加法和减法
+		else if (current == '+' || current == '-')
 		{
-			// 跳过空格
+			if (prevCharIsOperatorOrOpenParen)
+			{
+				// 如果前一个是运算符或左括号，把 + 和 - 作为符号处理
+				push(values, (current == '+' ? 1 : -1));
+				i++;
+			}
+			else
+			{
+				while (!isEmpty(ops) && precedence(peek(ops)) >= precedence(current))
+				{
+					double val2 = pop(values);
+					double val1 = pop(values);
+					char op = (char)pop(ops);
+					push(values, applyOp(val1, val2, op)); // 执行运算
+				}
+				push(ops, current); // 将运算符压入栈
+				i++;
+			}
+			prevCharIsOperatorOrOpenParen = 1;
+		}
+		// 左括号处理
+		else if (current == '(')
+		{
+			push(ops, current); // 将 '(' 压入运算符栈
+			prevCharIsOperatorOrOpenParen = 1;
 			i++;
+		}
+		// 右括号处理
+		else if (current == ')')
+		{
+			while (!isEmpty(ops) && peek(ops) != '(')
+			{
+				double val2 = pop(values);
+				double val1 = pop(values);
+				char op = (char)pop(ops);
+				push(values, applyOp(val1, val2, op)); // 执行运算
+			}
+			pop(ops); // 弹出 '('
+			prevCharIsOperatorOrOpenParen = 0;
+			i++;
+		}
+		// 非法字符
+		else if (current != '=')
+		{
+			return 0;
 		}
 		else
 		{
-			// 非法字符
-			*valid = 0;
-			return 0.0;
+			i++; // 跳过 '='
 		}
 	}
 
-	return result;
+	// 如果以 '=' 结尾，返回合法
+	return !prevCharIsOperatorOrOpenParen;
 }
 
+// 计算表达式的结果
+double evaluateExpression(Stack *values, Stack *ops)
+{
+	while (!isEmpty(ops))
+	{
+		double val2 = pop(values);
+		double val1 = pop(values);
+		char op = (char)pop(ops);
+		push(values, applyOp(val1, val2, op)); // 执行运算
+	}
+
+	return pop(values); // 返回最终结果
+}
+
+/**
+ * @brief 计算表达式
+ * @return 0:失败
+ */
 uint8_t Cal_Run(void)
 {
-	uint8_t CalValid = 1;
-
-	CalResult = evaluate_expression(CalStrIn, &CalValid);
-	if (CalValid)
+	Stack values, ops;	// 存储数字和运算符的栈
+	initStack(&values); // 初始化栈
+	initStack(&ops);
+	if (isValidAndPushToStack(CalStrIn, &values, &ops))
 	{
-		return 0;
+		CalResult = evaluateExpression(&values, &ops); // 计算表达式
+
+		return Cal_HistoryAdd();
 	}
 	else
 	{
-		return 1;
+		return 0;
 	}
 }

@@ -1,4 +1,6 @@
 #include "stm32f10x.h"
+#include <string.h>
+
 #include "LCD.h"
 #include "Delay.h"
 #include "Control.h"
@@ -86,6 +88,8 @@ void C_LEDShow(void) // C_ShowIndex->1
 	LCD_ShowString(5 + 8, 15 + 22 * 2, "C_Speed", BLACK, WHITE, 16, 0);
 	LCD_ShowString(5 + 8, 15 + 22 * 3, "B_Mode", BLACK, WHITE, 16, 0);
 	C_LEDShowData();
+	extern uint32_t LED_TimeStart;
+	LED_TimeStart = TimeTick;
 }
 void C_LEDShowData(void)
 {
@@ -162,16 +166,20 @@ void C_LEDKey(void)
 		switch (C_LEDShow_Index)
 		{
 		case 0: // C_Mode
-			LEDCMode = (LEDCMode - 1 + 6) % 6;
+			LED_SetCMode((LEDCMode - 1 + 6) % 6);
+			// LEDCMode = (LEDCMode - 1 + 6) % 6;
 			break;
 		case 1: // C_Dir
-			LEDCDir = (LEDCDir - 1 + 2) % 2;
+			LED_SetCDir((LEDCDir - 1 + 2) % 2);
+			// LEDCDir = (LEDCDir - 1 + 2) % 2;
 			break;
 		case 2: // C_Speed
-			LEDCSpeed = (LEDCSpeed - 2 + 99) % 99 + 1;
+			LED_SetCSpeed((LEDCSpeed - 2 + 99) % 99 + 1);
+			// LEDCSpeed = (LEDCSpeed - 2 + 99) % 99 + 1;
 			break;
 		case 3: // B_Mode
-			LEDBMode = (LEDBMode - 1 + 3) % 3;
+			LED_SetBMode((LEDBMode - 1 + 3) % 3);
+			// LEDBMode = (LEDBMode - 1 + 3) % 3;
 			break;
 		default:
 			break;
@@ -182,16 +190,20 @@ void C_LEDKey(void)
 		switch (C_LEDShow_Index)
 		{
 		case 0: // C_Mode
-			LEDCMode = (LEDCMode + 1) % 6;
+			LED_SetCMode((LEDCMode + 1) % 6);
+			// LEDCMode = (LEDCMode + 1) % 6;
 			break;
 		case 1: // C_Dir
-			LEDCDir = (LEDCDir + 1) % 2;
+			LED_SetCDir((LEDCDir + 1) % 2);
+			// LEDCDir = (LEDCDir + 1) % 2;
 			break;
 		case 2: // C_Speed
-			LEDCSpeed = LEDCSpeed % 99 + 1;
+			LED_SetCSpeed((LEDCSpeed + 2) % 99 - 1);
+			// LEDCSpeed = LEDCSpeed % 99 - 1;
 			break;
 		case 3: // B_Mode
-			LEDBMode = (LEDBMode + 1) % 3;
+			LED_SetBMode((LEDBMode + 1) % 3);
+			// LEDBMode = (LEDBMode + 1) % 3;
 			break;
 		default:
 			break;
@@ -211,9 +223,10 @@ void C_LEDKey(void)
 
 /****************************************************************/
 /*	计算器	*/
-#define _C_CAL_SHOW_ROW 4  // 行数
-#define _C_CAL_SHOW_COL 10 // 列数
-uint8_t C_Cal_State = 0;   // 计算器状态
+#define _C_CAL_SHOW_ROW 4	  // 行数
+#define _C_CAL_SHOW_COL 10	  // 列数
+uint8_t C_Cal_State = 0;	  // 计算器状态(1:输入状态,2:结果状态,3:历史状态)
+uint8_t C_CalShow_HIndex = 0; // 历史显示索引
 
 void C_CalShow(void) // C_ShowIndex->2
 {
@@ -253,9 +266,8 @@ void C_CalShowRe(void)
  */
 void C_Cal_ShowRes(void)
 {
-	if (Cal_Run() == 0)
+	if (Cal_Run() != 0)
 	{
-
 		long long int temp = (CalResult > 0) ? (long long int)CalResult : (long long int)(-CalResult);
 		uint8_t Num = 0; // 结果的位数
 		while (temp > 0)
@@ -283,6 +295,47 @@ void C_Cal_ShowRes(void)
 		LCD_ShowString(0, 10 + 22 * 4, "SYNTAX ERROR", RED, WHITE, 24, 0);
 	}
 }
+
+void C_Cal_ShowHistory(void)
+{
+	LCD_ShowString(0, 0, "Calculator_History", GREEN, WHITE, 12, 0); // 标题
+	uint8_t show_row = 0, show_col = 0;
+	char show_str[7][21] = {"\0", "\0", "\0", "\0", "\0", "\0", "\0"};
+	uint8_t show_strIndex = 0;
+
+	while (show_strIndex != CalHStrIndex[C_CalShow_HIndex - 1])
+	{
+		show_str[show_row][show_col] = CalHStr[C_CalShow_HIndex - 1][show_strIndex];
+		show_col++;
+		if (show_col == 20)
+		{
+			show_str[show_row][show_col] = '\0';
+			show_col = 0;
+			show_row++;
+		}
+		show_strIndex++;
+	}
+	show_str[show_row][show_col] = '\0';
+
+	for (uint8_t i = 0; (i < C_CalShow_HIndex) && (i < 4); i++)
+	{
+		strcpy(show_str[3 + i], (char *)Strf("%.2f", CalHRes[C_CalShow_HIndex - 1 - i]));
+	}
+
+	LCD_DrawLine(0, 13, 160, 13, BLACK);
+	for (uint8_t i = 0; i < 3; i++)
+	{
+		LCD_ShowString(0, 14 + 16 * i, (uint8_t *)show_str[i], BLACK, WHITE, 16, 0);
+	}
+	LCD_ShowString(0, 14 + 16 * 3, (uint8_t *)show_str[3], RED, WHITE, 16, 0);
+	LCD_DrawLine(0, 14 + 16 * 4 + 1, 160, 14 + 16 * 4 + 1, BLACK);
+
+	for (uint8_t i = 4; i < 7; i++)
+	{
+		LCD_ShowString(0, 14 + 3 + 16 * i, (uint8_t *)show_str[i], BLACK, WHITE, 16, 0);
+	}
+}
+
 void C_CalKey(void)
 {
 	if (KeyNum == 14 && KeyState == 2) // 长按退出
@@ -299,6 +352,14 @@ void C_CalKey(void)
 		switch (KeyNum)
 		{
 		case 1:
+			if (KeyState == 2)
+			{
+				LCD_Fill(0, 0, 160, 128, WHITE);
+				C_CalShow_HIndex = CalHIndex;
+				C_Cal_ShowHistory();
+				C_Cal_State = 3;
+				return;
+			}
 			temp = Cal_StrInAdd('7');
 			break;
 		case 2:
@@ -308,7 +369,14 @@ void C_CalKey(void)
 			temp = Cal_StrInAdd('9');
 			break;
 		case 4:
-			temp = Cal_StrInAdd('/');
+			if (KeyState == 2)
+			{
+				temp = Cal_StrInAdd('(');
+			}
+			else
+			{
+				temp = Cal_StrInAdd('/');
+			}
 			break;
 		case 5:
 			temp = Cal_StrInAdd('4');
@@ -320,7 +388,14 @@ void C_CalKey(void)
 			temp = Cal_StrInAdd('6');
 			break;
 		case 8:
-			temp = Cal_StrInAdd('*');
+			if (KeyState == 2)
+			{
+				temp = Cal_StrInAdd(')');
+			}
+			else
+			{
+				temp = Cal_StrInAdd('*');
+			}
 			break;
 		case 9:
 			temp = Cal_StrInAdd('1');
@@ -332,7 +407,14 @@ void C_CalKey(void)
 			temp = Cal_StrInAdd('3');
 			break;
 		case 12:
-			temp = Cal_StrInAdd('-');
+			if (KeyState == 2)
+			{
+				temp = Cal_StrInAdd('^');
+			}
+			else
+			{
+				temp = Cal_StrInAdd('-');
+			}
 			break;
 		case 13:
 			temp = Cal_StrInAdd('0');
@@ -364,6 +446,38 @@ void C_CalKey(void)
 		Cal_Exit();
 		LCD_Fill(0, 0, 160, 128, WHITE);
 		C_CalShow();
+	}
+	else if (C_Cal_State == 3)
+	{
+		switch (KeyNum)
+		{
+		case 1:
+			LCD_Fill(0, 0, 160, 128, WHITE);
+			CalStrIn_Index = 0;
+			CalStrIn[0] = '\0';
+			C_CalShow();
+			C_Cal_State = 1;
+
+			break;
+		case 2:
+			if (C_CalShow_HIndex < CalHIndex)
+			{
+				C_CalShow_HIndex++;
+				LCD_Fill(0, 0, 160, 128, WHITE);
+				C_Cal_ShowHistory();
+			}
+
+			break;
+		case 10:
+			if (C_CalShow_HIndex > 1)
+			{
+				C_CalShow_HIndex--;
+				LCD_Fill(0, 0, 160, 128, WHITE);
+				C_Cal_ShowHistory();
+			}
+		default:
+			break;
+		}
 	}
 }
 
@@ -512,5 +626,9 @@ void C_Refresh(void)
 	if (C_ShowIndex == 3 && SW_Flag == 1)
 	{
 		C_SWShowTime0();
+	}
+	if (C_ShowIndex == 1)
+	{
+		LED_Refresh();
 	}
 }
