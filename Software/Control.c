@@ -1,4 +1,4 @@
-#include "stm32f10x.h"
+﻿#include "stm32f10x.h"
 #include <string.h>
 
 #include "LCD.h"
@@ -7,6 +7,7 @@
 #include "LED.h"
 #include "Calculator.h"
 #include "Stopwatch.h"
+#include "Weather.h"
 
 uint8_t C_ShowIndex = 0; // 当前显示页面编号
 
@@ -22,11 +23,16 @@ uint8_t C_MenuShow_Index = 0;
  */
 void C_MenuShow(void) // C_ShowIndex->0
 {
-	// LCD_Fill(0,0,160,128,WHITE);
-	LCD_ShowString(5, 5 + 30 * 0, " LED", BLACK, WHITE, 24, 0);
-	LCD_ShowString(5, 5 + 30 * 1, " Calculator", BLACK, WHITE, 24, 0);
-	LCD_ShowString(5, 5 + 30 * 2, " Stopwatch", BLACK, WHITE, 24, 0);
-	// LCD_Fill(0, 0, 16, 128, WHITE);
+	LCD_ShowString(5 + 12, 5 + 30 * 0, "LED", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(5 + 12 * 4, 5, "灯", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(5 + 12, 5 + 30 * 1, "计算器", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(5 + 12, 5 + 30 * 2, "秒表", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(5 + 12, 5 + 30 * 3, "天气", BLACK, WHITE, 24, 0);
+	LCD_ShowChar(5, 5 + 30 * C_MenuShow_Index, '>', BLACK, WHITE, 24, 0);
+}
+void C_MenuShowData(void) // 菜单显示_数据刷新
+{
+	LCD_Fill(5, 5, 5 + 12, 5 + 30 * 3 + 24, WHITE);
 	LCD_ShowChar(5, 5 + 30 * C_MenuShow_Index, '>', BLACK, WHITE, 24, 0);
 }
 void C_MenuKey(void)
@@ -38,38 +44,44 @@ void C_MenuKey(void)
 		{
 			C_MenuShow_Index--;
 		}
-		C_MenuShow();
+		C_MenuShowData();
 		break;
 	case 10: // 下
-		if (C_MenuShow_Index != 2)
+		if (C_MenuShow_Index != 3)
 		{
 			C_MenuShow_Index++;
 		}
-		C_MenuShow();
+		C_MenuShowData();
 
 		break;
 	case 15: // 进入
-		switch (C_MenuShow_Index)
+
+		switch (C_MenuShow_Index) // 当前选项
 		{
-		case 0:
+		case 0: // LED灯
 			C_ShowIndex = 1;
 			LCD_Fill(0, 0, 160, 128, WHITE);
 			C_LEDShow();
 			break;
-		case 1:
+		case 1: // 计算器
 			C_ShowIndex = 2;
 			LCD_Fill(0, 0, 160, 128, WHITE);
 			C_CalShow();
 			break;
-		case 2:
+		case 2: // 秒表
 			C_ShowIndex = 3;
 			LCD_Fill(0, 0, 160, 128, WHITE);
 			C_SWShow();
-
+			break;
+		case 3: // 天气
+			C_ShowIndex = 4;
+			LCD_Fill(0, 0, 160, 128, WHITE);
+			C_WeatherShow();
 			break;
 		default:
 			break;
 		}
+
 	default:
 		break;
 	}
@@ -601,6 +613,88 @@ void C_SWKey(void)
 	}
 }
 
+/****************************************************************/
+/*	天气	*/
+uint8_t C_Weather_csatIndex = 0;
+void C_WeatherShow(void) // C_ShowIndex->4
+{
+	/*固定内容*/
+	LCD_ShowChinese(0, 0, "商丘", BLACK, WHITE, 24, 0);
+	LCD_DrawLine(49, 0, 49, 25, BLACK);
+	LCD_DrawLine(0, 25, 160, 25, BLACK);
+	// 白天
+	LCD_ShowChinese24x24(0, 26, "白", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese24x24(0, 52, "天", BLACK, WHITE, 24, 0);
+	LCD_DrawLine(0, 76, 160, 76, BLACK);
+	// 夜晚
+	LCD_ShowChinese24x24(0, 78, "夜", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese24x24(0, 104, "晚", BLACK, WHITE, 24, 0);
+	// 其它
+	LCD_DrawLine(25, 25, 25, 128, BLACK); // 左边竖线
+	// 数据
+	C_WeatherShowData();
+}
+void C_WeatherShowData(void)
+{
+	/*清空屏幕原有内容 */
+	LCD_Fill(26, 26, 160, 75, WHITE);
+	LCD_Fill(26, 78, 160, 128, WHITE);
+	/*显示数据*/
+	cast_t *cast = &WeatherCasts[C_Weather_csatIndex];
+	// 日期
+	LCD_ShowString(52, 0, (uint8_t *)((cast->date) + 5), C_Weather_csatIndex == 0 ? RED : BLACK, WHITE, 24, 0);
+	const char *week[] = {"一", "二", "三", "四", "五", "六", "日"};
+	LCD_ShowChinese(112, 0, "周", C_Weather_csatIndex == 0 ? RED : BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(136, 0, (uint8_t *)week[(cast->week)[0] - 48 - 1], C_Weather_csatIndex == 0 ? RED : BLACK, WHITE, 24, 0);
+
+	// 白天
+	LCD_ShowChinese(26, 26, (uint8_t *)(cast->dayweather), BLACK, WHITE, 24, 0); // 天气
+	LCD_ShowString(100, 26, Strf("%3s", (cast->daytemp)), BLACK, WHITE, 24, 0);	 // 温度
+	LCD_ShowChinese(136, 26, "℃", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(26, 26 + 26, (uint8_t *)(cast->daywind), BLACK, WHITE, 24, 0);	  // 风向
+	LCD_ShowString(100, 26 + 26, Strf("%3s", (cast->daypower)), BLACK, WHITE, 24, 0); // 风力
+	LCD_ShowChinese(136, 52, "级", BLACK, WHITE, 24, 0);
+	// 夜晚
+	LCD_ShowChinese(26, 78, (uint8_t *)(cast->nightweather), BLACK, WHITE, 24, 0); // 天气
+	LCD_ShowString(100, 78, Strf("%3s", (cast->nighttemp)), BLACK, WHITE, 24, 0);  // 温度
+	LCD_ShowChinese(136, 78, "℃", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(26, 78 + 26, (uint8_t *)(cast->nightwind), BLACK, WHITE, 24, 0);	// 风向
+	LCD_ShowString(100, 78 + 26, Strf("%3s", (cast->nightpower)), BLACK, WHITE, 24, 0); // 风力
+	LCD_ShowChinese(136, 104, "级", BLACK, WHITE, 24, 0);
+}
+
+void C_WeatherKey(void)
+{
+	switch (KeyNum)
+	{
+	case 5:
+		if (C_Weather_csatIndex != 0)
+		{
+			C_Weather_csatIndex--;
+			C_WeatherShowData();
+		}
+		break;
+	case 7:
+		if (C_Weather_csatIndex != 3)
+		{
+			C_Weather_csatIndex++;
+			C_WeatherShowData();
+		}
+		break;
+	case 14:			   // 退出
+		if (KeyState == 2) // 长按
+		{
+			C_ShowIndex = 0;
+			LCD_Fill(0, 0, 160, 128, WHITE);
+			C_MenuShow();
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+/****************************************************************/
 /*	通用	*/
 
 /**

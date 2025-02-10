@@ -4,6 +4,7 @@
 #include "Timer.h"
 #include "Key.h"
 #include "LED.h"
+#include "Weather.h"
 #include "Control.h"
 
 uint32_t TimeTick = 0;
@@ -16,6 +17,7 @@ void Init(void)
 	Timer_Init();
 	Key_Init();
 	LED_Init();
+	ESP_Init();
 
 	LCD_Fill(0, 0, 160, 128, WHITE);
 	C_MenuShow();
@@ -25,17 +27,22 @@ int main(void)
 {
 	extern uint8_t CalHIndex;
 	Init();
+	ESP_Connect();
+	LCD_ShowString(0, 0, "InitComplete01", BLACK, WHITE, 16, 0);
+	Weather_Parse();
+	LCD_ShowString(0, 0, "InitComplete02", BLACK, WHITE, 16, 0);
+	LCD_ShowString(0, 16, (uint8_t *)WeatherCasts[0].date, BLACK, WHITE, 16, 0);
 	while (1)
 	{
 		// LCD_ShowIntNum(147, 115 * 0, TimeTick / 100, 2, BLACK, WHITE, 12);
-		// LCD_ShowString(160 - 6 * 8, 0, Strf("F%03d T%02d", FPS, (TimeTick / 100) % 100), BLACK, WHITE, 12, 0);
+		//LCD_ShowString(160 - 6 * 7, 0, Strf("F%03dT%02d", FPS, (TimeTick / 100) % 100), BLACK, WHITE, 12, 0);
 		// LCD_ShowString(160 - 6 * (8 + 4), 0, Strf("CS%d", CalHIndex), BLACK, WHITE, 12, 0);
 		// 刷新键值
 		KeyNum = Key_GetNum(&KeyState);
 		if (KeyNum != 0)
 		{
-			// LCD_ShowIntNum(0, 0, KeyNum, 2, BLACK, WHITE, 16); // 显示按键状态
-			// LCD_ShowIntNum(24, 0, KeyState, 2, BLACK, WHITE, 16);
+			//LCD_ShowIntNum(0, 0, KeyNum, 2, BLACK, WHITE, 16); // 显示按键状态
+			//LCD_ShowIntNum(24, 0, KeyState, 2, BLACK, WHITE, 16);
 			switch (C_ShowIndex)
 			{
 			case 0:
@@ -50,6 +57,8 @@ int main(void)
 			case 3:
 				C_SWKey();
 				break;
+			case 4:
+				C_WeatherKey();
 			default:
 				break;
 			}

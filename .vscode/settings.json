@@ -61,6 +61,8 @@
         "ctype.h": "c",
         "stm32f10x_gpio.h": "c",
         "sstream": "c",
-        "*.tcc": "c"
+        "*.tcc": "c",
+        "weather.h": "c",
+        "jsmn.h": "c"
     }
 }
