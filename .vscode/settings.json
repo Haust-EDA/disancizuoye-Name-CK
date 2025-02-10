@@ -60,6 +60,7 @@
         "stopwatch.h": "c",
         "ctype.h": "c",
         "stm32f10x_gpio.h": "c",
-        "sstream": "c"
+        "sstream": "c",
+        "*.tcc": "c"
     }
 }

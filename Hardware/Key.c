@@ -17,8 +17,8 @@
 // 管脚定义
 #define C1 GPIO_Pin_4 // GPIOB
 #define C2 GPIO_Pin_5 // GPIOB
-#define C3 GPIO_Pin_6 // GPIOB
-#define C4 GPIO_Pin_7 // GPIOB
+#define C3 GPIO_Pin_8 // GPIOB
+#define C4 GPIO_Pin_9 // GPIOB
 
 #define R1 GPIO_Pin_11 // GPIOA
 #define R2 GPIO_Pin_10 // GPIOA
