@@ -776,6 +776,41 @@ void LCD_ShowString(uint16_t x, uint16_t y, const uint8_t *p, uint16_t fc, uint1
 	}
 }
 
+void LCD_ShowStr(uint16_t x, uint16_t y, uint8_t *pstr, uint16_t fc, uint16_t bc, uint8_t sizey, uint8_t mode)
+{
+	while (*pstr != '\0')
+	{
+		if ((*pstr >> 7) == 1)
+		{
+			switch (sizey)
+			{
+			case 12:
+				LCD_ShowChinese12x12(x, y, pstr, fc, bc, sizey, mode);
+				break;
+			case 16:
+				LCD_ShowChinese16x16(x, y, pstr, fc, bc, sizey, mode);
+				break;
+			case 24:
+				LCD_ShowChinese24x24(x, y, pstr, fc, bc, sizey, mode);
+				break;
+			case 32:
+				LCD_ShowChinese32x32(x, y, pstr, fc, bc, sizey, mode);
+				break;
+			default:
+				x -= sizey;
+				break;
+			}
+			x += sizey;
+			pstr += 3;
+		}
+		else
+		{
+			LCD_ShowChar(x, y, *pstr, fc, bc, sizey, mode);
+			x += sizey / 2;
+			pstr++;
+		}
+	}
+}
 /**
  * @brief 	计算幂
  * @param	m 底数
