@@ -1,4 +1,4 @@
-﻿#include "stm32f10x.h"
+#include "stm32f10x.h"
 #include <string.h>
 
 #include "LCD.h"
@@ -18,6 +18,7 @@ extern uint8_t KeyState;
 /****************************************************************/
 /*	主菜单	*/
 uint8_t C_MenuShow_Index = 0;
+uint8_t C_MenuShow_weatherisget = 0;
 /**
  * @brief 显示主菜单
  */
@@ -27,7 +28,7 @@ void C_MenuShow(void) // C_ShowIndex->0
 	LCD_ShowChinese(5 + 12 * 4, 5, "灯", BLACK, WHITE, 24, 0);
 	LCD_ShowChinese(5 + 12, 5 + 30 * 1, "计算器", BLACK, WHITE, 24, 0);
 	LCD_ShowChinese(5 + 12, 5 + 30 * 2, "秒表", BLACK, WHITE, 24, 0);
-	LCD_ShowChinese(5 + 12, 5 + 30 * 3, "天气", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(5 + 12, 5 + 30 * 3, "天气", WeatherIsGet ? BLACK : GRAY, WHITE, 24, 0);
 	LCD_ShowChar(5, 5 + 30 * C_MenuShow_Index, '>', BLACK, WHITE, 24, 0);
 }
 void C_MenuShowData(void) // 菜单显示_数据刷新
@@ -40,14 +41,14 @@ void C_MenuKey(void)
 	switch (KeyNum)
 	{
 	case 2: // 上
-		if (C_MenuShow_Index != 0)
+		if (C_MenuShow_Index > 0)
 		{
 			C_MenuShow_Index--;
 		}
 		C_MenuShowData();
 		break;
 	case 10: // 下
-		if (C_MenuShow_Index != 3)
+		if (C_MenuShow_Index < 3 && !(C_MenuShow_Index == 2 && WeatherIsGet == 0))
 		{
 			C_MenuShow_Index++;
 		}
@@ -648,18 +649,57 @@ void C_WeatherShowData(void)
 	LCD_ShowChinese(136, 0, (uint8_t *)week[(cast->week)[0] - 48 - 1], C_Weather_csatIndex == 0 ? RED : BLACK, WHITE, 24, 0);
 
 	// 白天
-	LCD_ShowChinese(26, 26, (uint8_t *)(cast->dayweather), BLACK, WHITE, 24, 0); // 天气
-	LCD_ShowString(100, 26, Strf("%3s", (cast->daytemp)), BLACK, WHITE, 24, 0);	 // 温度
+	// 天气
+	if (strlen((cast->dayweather)) / 3 > 3)
+	{
+		LCD_ShowChinese(26, 26, "未知", BLACK, WHITE, 24, 0);
+	}
+	else
+	{
+		LCD_ShowChinese(26, 26, (uint8_t *)(cast->dayweather), BLACK, WHITE, 24, 0);
+	}
+	// 温度
+	LCD_ShowString(100, 26, Strf("%3s", (cast->daytemp)), BLACK, WHITE, 24, 0);
 	LCD_ShowChinese(136, 26, "℃", BLACK, WHITE, 24, 0);
-	LCD_ShowChinese(26, 26 + 26, (uint8_t *)(cast->daywind), BLACK, WHITE, 24, 0);	  // 风向
-	LCD_ShowString(100, 26 + 26, Strf("%3s", (cast->daypower)), BLACK, WHITE, 24, 0); // 风力
+	// 风向
+	if (strlen((cast->daywind)) / 3 <= 2)
+	{
+		LCD_ShowChinese(26, 26 + 26, (uint8_t *)(cast->daywind), BLACK, WHITE, 24, 0);
+		LCD_ShowChinese(26 + (strlen((cast->nightwind)) / 3) * 24, 26 + 26, "风", BLACK, WHITE, 24, 0);
+	}
+	else if (strlen((cast->daywind)) / 3 >= 4)
+	{
+		LCD_ShowChinese(26, 26 + 26, "不定", BLACK, WHITE, 24, 0);
+	}
+	// 风力
+	LCD_ShowString(100, 26 + 26, Strf("%3s", (cast->daypower)), BLACK, WHITE, 24, 0);
 	LCD_ShowChinese(136, 52, "级", BLACK, WHITE, 24, 0);
+
 	// 夜晚
-	LCD_ShowChinese(26, 78, (uint8_t *)(cast->nightweather), BLACK, WHITE, 24, 0); // 天气
-	LCD_ShowString(100, 78, Strf("%3s", (cast->nighttemp)), BLACK, WHITE, 24, 0);  // 温度
+	// 天气
+	if (strlen((cast->nightweather)) / 3 > 3)
+	{
+		LCD_ShowChinese(26, 78, "未知", BLACK, WHITE, 24, 0);
+	}
+	else
+	{
+		LCD_ShowChinese(26, 78, (uint8_t *)(cast->nightweather), BLACK, WHITE, 24, 0);
+	}
+	// 温度
+	LCD_ShowString(100, 78, Strf("%3s", (cast->nighttemp)), BLACK, WHITE, 24, 0);
 	LCD_ShowChinese(136, 78, "℃", BLACK, WHITE, 24, 0);
-	LCD_ShowChinese(26, 78 + 26, (uint8_t *)(cast->nightwind), BLACK, WHITE, 24, 0);	// 风向
-	LCD_ShowString(100, 78 + 26, Strf("%3s", (cast->nightpower)), BLACK, WHITE, 24, 0); // 风力
+	// 风向
+	if (strlen((cast->nightwind)) / 3 <= 2)
+	{
+		LCD_ShowChinese(26, 78 + 26, (uint8_t *)(cast->nightwind), BLACK, WHITE, 24, 0);
+		LCD_ShowChinese(26 + (strlen((cast->nightwind)) / 3) * 24, 78 + 26, "风", BLACK, WHITE, 24, 0);
+	}
+	else if (strlen((cast->nightwind)) / 3 >= 4)
+	{
+		LCD_ShowChinese(26, 78 + 26, "不定", BLACK, WHITE, 24, 0);
+	}
+	// 风力
+	LCD_ShowString(100, 78 + 26, Strf("%3s", (cast->nightpower)), BLACK, WHITE, 24, 0);
 	LCD_ShowChinese(136, 104, "级", BLACK, WHITE, 24, 0);
 }
 
@@ -681,7 +721,8 @@ void C_WeatherKey(void)
 			C_WeatherShowData();
 		}
 		break;
-	case 14:			   // 退出
+	case 14: // 退出
+
 		if (KeyState == 2) // 长按
 		{
 			C_ShowIndex = 0;
@@ -717,12 +758,18 @@ uint8_t *Strf(char *format, ...)
  */
 void C_Refresh(void)
 {
+	if (C_ShowIndex == 0 && C_MenuShow_weatherisget == 0 && WeatherIsGet == 1)
+	{
+		C_MenuShow_weatherisget = 1;
+		C_MenuShow();
+	}
 	if (C_ShowIndex == 3 && SW_Flag == 1)
 	{
 		C_SWShowTime0();
 	}
-	if (C_ShowIndex == 1)
-	{
-		LED_Refresh();
-	}
+	LED_Refresh();
+	// if (C_ShowIndex == 1)
+	// {
+	//
+	// }
 }

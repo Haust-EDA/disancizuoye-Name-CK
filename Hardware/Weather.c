@@ -6,42 +6,44 @@
 #include "Weather.h"
 #include "Delay.h"
 #include "jsmn.h"
+#include "LCD.h"
+
+extern uint32_t TimeTick;
 
 // USART 1
-#define USART1_StopBits USART_StopBits_1	  // Í£Ö¹Î» 1
-#define USART1_WordLength USART_WordLength_8b // Êı¾İÎ» 8
-#define USART1_Parity USART_Parity_No		  // Ğ£ÑéÎ» NONE
-#define USART1_BaudRate 115200				  // ²¨ÌØÂÊ
+#define USART1_StopBits USART_StopBits_1	  // åœæ­¢ä½ 1
+#define USART1_WordLength USART_WordLength_8b // æ•°æ®ä½ 8
+#define USART1_Parity USART_Parity_No		  // æ ¡éªŒä½ NONE
+#define USART1_BaudRate 115200				  // æ³¢ç‰¹ç‡
 
-/* È«¾Ö±äÁ¿ */
-uint8_t RxData[2048]; // ½ÓÊÕÊı¾İ»º´æÇø
+/* å…¨å±€å˜é‡ */
+uint8_t RxData[2048]; // æ¥æ”¶æ•°æ®ç¼“å­˜åŒº
 
-uint16_t RxIndex = 0; // ½ÓÊÕÊı¾İµÄ×Ö½ÚÊı
+uint16_t RxIndex = 0; // æ¥æ”¶æ•°æ®çš„å­—èŠ‚æ•°
 uint8_t Esp_isConnect = 1;
-uint8_t Esp_isRx = 0;
+uint8_t WeatherIsGet = 0;
 cast_t WeatherCasts[CAST_COUNT];
 
 // /**
-//  * @brief ¸ñÊ½»¯×Ö·û´®
+//  * @brief æ ¼å¼åŒ–å­—ç¬¦ä¸²
 //  */
 // uint8_t *Strf(char *format, ...)
 // {
 // 	static char String[255];
-// 	// ¸ñÊ½»¯×Ö·û
+// 	// æ ¼å¼åŒ–å­—ç¬¦
 // 	va_list arg;
 // 	va_start(arg, format);
 // 	vsprintf(String, format, arg);
 // 	va_end(arg);
-// 	// ·µ»Ø×Ö·û´®Ö¸Õë
+// 	// è¿”å›å­—ç¬¦ä¸²æŒ‡é’ˆ
 // 	return (uint8_t *)String;
 // }
 
-
 /**
- * @brief   ·¢ËÍÊı×é(ÀàĞÍ uint8_t)
- * @param   Arr		´ı·¢ËÍÊı×éµÄÖ¸Õë
- * @param   Length	Êı×é³¤¶È
- * @retval  ÎŞ
+ * @brief   å‘é€æ•°ç»„(ç±»å‹ uint8_t)
+ * @param   Arr		å¾…å‘é€æ•°ç»„çš„æŒ‡é’ˆ
+ * @param   Length	æ•°ç»„é•¿åº¦
+ * @retval  æ— 
  */
 void SerialWrite(uint8_t *Arr, uint16_t Length)
 {
@@ -50,28 +52,28 @@ void SerialWrite(uint8_t *Arr, uint16_t Length)
 	{
 		USART_SendData(USART1, Arr[i]);
 		while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET)
-			; // USART_FLAG_TXE	·¢ËÍÊı¾İ¼Ä´æÆ÷¿Õ±êÖ¾Î»
+			; // USART_FLAG_TXE	å‘é€æ•°æ®å¯„å­˜å™¨ç©ºæ ‡å¿—ä½
 	}
 }
 /**
- * @brief   »ñµÃ½ÓÊÕµÄÊı×é
- * @param   Arr 	´æ´¢´ı½ÓÊÕÊı×éµÄÖ¸Õë
- * @param   Length 	Êı×é³¤¶È
- * @retval  (uint8_t) 0Ê§°Ü;1³É¹¦;2³É¹¦µ«ÌáÈ¡µÄ³¤¶ÈĞ¡ÓÚ»º´æÇø
- * @warning µ±»º´æÇøµÄÊı¾İÎ»Êı³¬³öĞèÒªµÄÊ±ºò£¬³¬³öLengthµÄ×Ö½Ú»á±»ºöÂÔ
- * @todo    ½â¾öwarning
+ * @brief   è·å¾—æ¥æ”¶çš„æ•°ç»„
+ * @param   Arr 	å­˜å‚¨å¾…æ¥æ”¶æ•°ç»„çš„æŒ‡é’ˆ
+ * @param   Length 	æ•°ç»„é•¿åº¦
+ * @retval  (uint8_t) 0å¤±è´¥;1æˆåŠŸ;2æˆåŠŸä½†æå–çš„é•¿åº¦å°äºç¼“å­˜åŒº
+ * @warning å½“ç¼“å­˜åŒºçš„æ•°æ®ä½æ•°è¶…å‡ºéœ€è¦çš„æ—¶å€™ï¼Œè¶…å‡ºLengthçš„å­—èŠ‚ä¼šè¢«å¿½ç•¥
+ * @todo    è§£å†³warning
  */
 uint8_t SerialRead(uint8_t *Arr, uint8_t Length)
 {
 	if (RxIndex >= Length)
 	{
-		// ×ªÒÆ½ÓÊÜµ½µÄÊı¾İÖÁArr
+		// è½¬ç§»æ¥å—åˆ°çš„æ•°æ®è‡³Arr
 		for (uint8_t i = 0; i < Length; i++)
 		{
 			Arr[i] = RxData[i];
 		}
 
-		// ÅĞ¶ÏÇëÇóµÄÊı¾İ³¤¶ÈÓë»º´æµÄÊı¾İ³¤¶ÈÊÇ·ñÏàµÈ
+		// åˆ¤æ–­è¯·æ±‚çš„æ•°æ®é•¿åº¦ä¸ç¼“å­˜çš„æ•°æ®é•¿åº¦æ˜¯å¦ç›¸ç­‰
 		if (RxIndex == Length)
 		{
 			RxIndex = 0;
@@ -86,7 +88,7 @@ uint8_t SerialRead(uint8_t *Arr, uint8_t Length)
 	return 0;
 }
 /**
- * @brief ´®¿Ú³õÊ¼»¯
+ * @brief ä¸²å£åˆå§‹åŒ–
  */
 void USART1_Init(void)
 {
@@ -109,11 +111,11 @@ void USART1_Init(void)
 	USART_InitTypeDef USART_Itd;
 	USART_StructInit(&USART_Itd);
 	USART_Itd.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
-	/****** ÒÔÏÂÊı¾İÔÚ Serial.h ÎÄ¼şÖĞĞŞ¸Ä ******/
-	USART_Itd.USART_StopBits = USART1_StopBits;		// Í£Ö¹Î»
-	USART_Itd.USART_WordLength = USART1_WordLength; // Êı¾İÎ»
-	USART_Itd.USART_Parity = USART1_Parity;			// Ğ£ÑéÎ»
-	USART_Itd.USART_BaudRate = USART1_BaudRate;		// ²¨ÌØÂÊ
+	/****** ä»¥ä¸‹æ•°æ®åœ¨ Serial.h æ–‡ä»¶ä¸­ä¿®æ”¹ ******/
+	USART_Itd.USART_StopBits = USART1_StopBits;		// åœæ­¢ä½
+	USART_Itd.USART_WordLength = USART1_WordLength; // æ•°æ®ä½
+	USART_Itd.USART_Parity = USART1_Parity;			// æ ¡éªŒä½
+	USART_Itd.USART_BaudRate = USART1_BaudRate;		// æ³¢ç‰¹ç‡
 	/*********************************************/
 	USART_Init(USART1, &USART_Itd);
 
@@ -133,12 +135,12 @@ void USART1_IRQHandler(void)
 {
 	if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET)
 	{
-		if (Esp_isRx == 1)
+		RxData[RxIndex++] = USART_ReceiveData(USART1);
+		RxData[RxIndex] = '\0';
+		if (RxIndex >= 2048 - 1)
 		{
-			RxData[RxIndex++] = USART_ReceiveData(USART1);
-			RxData[RxIndex] = '\0';
+			RxIndex = 0;
 		}
-
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
 }
@@ -150,29 +152,162 @@ void ESP_Init(void)
 
 void ESP_Connect(void)
 {
-	SerialWrite((uint8_t *)"AT+RST\r\n", 8);
-	Delay_s(6);
-	RxIndex = 0;
-	SerialWrite((uint8_t *)"ATE0\r\n", 6);
-	Delay_ms(200);
-	RxIndex = 0;
-	SerialWrite((uint8_t *)"AT+CIPSTART=\"TCP\",\"restapi.amap.com\",80\r\n", 42);
-	Delay_s(2);
-	SerialWrite((uint8_t *)"AT+CIPMODE=1\r\n", 14);
-	Delay_ms(300);
-	SerialWrite((uint8_t *)"AT+CIPSEND\r\n", 12);
-	Delay_ms(300);
-	RxIndex = 0;
-	Esp_isRx = 1;
-	SerialWrite((uint8_t *)"GET http://restapi.amap.com/v3/weather/weatherInfo?key=9e78f303567d7abf2520e4ff9b930acb&city=411402&extensions=all\n", 117);
-	Delay_s(1);
+	static uint8_t cfunState = 0;
+	static uint32_t startTime0 = 0;
+	static uint32_t startTime = 0;
+	static uint8_t state = 0;
+
+	if (TimeTick - startTime0 < 5 || cfunState == 0xFF)
+	{
+		return;
+	}
+	startTime0 = TimeTick;
+
+	switch (cfunState)
+	{
+	case 0: // å¤ä½
+		RxIndex = 0;
+		SerialWrite((uint8_t *)"AT+RST\r\n", 8);
+		startTime = TimeTick;
+		cfunState++;
+		state = 0;
+	case 1: // WIFIè¿æ¥
+		if (strstr((char *)&RxData[600], "GOT IP") != NULL)
+		{
+			cfunState++;
+		}
+		else if (TimeTick - startTime > 5000)
+		{
+			cfunState = 12;
+			state = 1;
+		}
+		break;
+	case 2: // å…³é—­å›æ˜¾
+		RxIndex = 0;
+		SerialWrite((uint8_t *)"ATE0\r\n", 6);
+		startTime = TimeTick;
+		cfunState++;
+	case 3:
+		if (strstr((char *)RxData, "OK") != NULL)
+		{
+			cfunState++;
+		}
+		else if (TimeTick - startTime > 5000)
+		{
+			cfunState = 0;
+		}
+		break;
+	case 4: // è¿æ¥TCPæœåŠ¡å™¨
+		RxIndex = 0;
+		SerialWrite((uint8_t *)"AT+CIPSTART=\"TCP\",\"restapi.amap.com\",80\r\n", 42);
+		startTime = TimeTick;
+		cfunState++;
+	case 5:
+		if (strstr((char *)RxData, "CONNECT") != NULL)
+		{
+			cfunState++;
+		}
+		else if (TimeTick - startTime > 5000)
+		{
+			cfunState = 0;
+		}
+		break;
+	case 6: // å¼€å¯ç©¿é€
+		RxIndex = 0;
+		SerialWrite((uint8_t *)"AT+CIPMODE=1\r\n", 14);
+		startTime = TimeTick;
+		cfunState++;
+	case 7:
+		if (strstr((char *)RxData, "OK") != NULL)
+		{
+			cfunState++;
+		}
+		else if (TimeTick - startTime > 5000)
+		{
+			cfunState = 12;
+			state = 1;
+		}
+		break;
+	case 8:
+		RxIndex = 0;
+		SerialWrite((uint8_t *)"AT+CIPSEND\r\n", 12);
+		startTime = TimeTick;
+		cfunState++;
+	case 9:
+		if (strstr((char *)RxData, ">") != NULL)
+		{
+			cfunState++;
+		}
+		else if (TimeTick - startTime > 5000)
+		{
+			cfunState = 12;
+			state = 1;
+		}
+		break;
+	case 10: // å‘é€ HTTP è¯·æ±‚
+		RxIndex = 0;
+		SerialWrite((uint8_t *)"GET http://restapi.amap.com/v3/weather/weatherInfo?key=9e78f303567d7abf2520e4ff9b930acb&city=411402&extensions=all\n", 117);
+		startTime = TimeTick;
+		cfunState++;
+	case 11: // æ•°æ®å¤„ç†
+		if (Weather_Parse() == 0)
+		{
+			cfunState++;
+			WeatherIsGet = 1;
+		}
+		else if (TimeTick - startTime > 5000)
+
+		{
+			cfunState = 12;
+			state = 1;
+		}
+		break;
+	case 12: // å…³é—­ç©¿é€
+		RxIndex = 0;
+		SerialWrite((uint8_t *)"+++", 3);
+		cfunState++;
+		startTime = TimeTick;
+	case 13:
+		if (TimeTick - startTime > 1000)
+		{
+			SerialWrite((uint8_t *)"AT+CIPMODE=0\r\n", 14);
+			cfunState = 0xFF;
+			if (state == 1)
+			{
+				cfunState = 0;
+			}
+		}
+		break;
+	default:
+		break;
+	}
 }
+
+// void ESP_Connect(void)
+// {
+// 	SerialWrite((uint8_t *)"AT+RST\r\n", 8);
+// 	Delay_s(6);
+// 	RxIndex = 0;
+// 	SerialWrite((uint8_t *)"ATE0\r\n", 6);
+// 	Delay_ms(200);
+// 	RxIndex = 0;
+// 	SerialWrite((uint8_t *)"AT+CIPSTART=\"TCP\",\"restapi.amap.com\",80\r\n", 42);
+// 	Delay_s(2);
+// 	SerialWrite((uint8_t *)"AT+CIPMODE=1\r\n", 14);
+// 	Delay_ms(300);
+// 	SerialWrite((uint8_t *)"AT+CIPSEND\r\n", 12);
+// 	Delay_ms(300);
+// 	RxIndex = 0;
+// 	Esp_isRx = 1;
+// 	SerialWrite((uint8_t *)"GET http://restapi.amap.com/v3/weather/weatherInfo?key=9e78f303567d7abf2520e4ff9b930acb&city=411402&extensions=all\n", 117);
+// 	Delay_s(1);
+// }
 
 /***************************************/
 
 /*
- * ¸¨Öúº¯Êı£ºÅĞ¶Ï token ±íÊ¾µÄ×Ö·û´®ÊÇ·ñµÈÓÚ s
- * ·µ»Ø 0 ±íÊ¾ÏàµÈ£¬·Ç 0 ±íÊ¾²»ÏàµÈ
+ * è¾…åŠ©å‡½æ•°ï¼šåˆ¤æ–­ token è¡¨ç¤ºçš„å­—ç¬¦ä¸²æ˜¯å¦ç­‰äº s
+ * è¿”å› 0 è¡¨ç¤ºç›¸ç­‰ï¼Œé 0 è¡¨ç¤ºä¸ç›¸ç­‰
  */
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s)
 {
@@ -186,14 +321,14 @@ static int jsoneq(const char *json, jsmntok_t *tok, const char *s)
 }
 
 /*
- * º¯Êı£ºparse_casts
- * ×÷ÓÃ£ºÊ¹ÓÃ jsmn ½âÎö´«ÈëµÄ JSON ×Ö·û´®£¬´ÓÖĞÌáÈ¡³ö 4 ¸ö cast ¶ÔÏó£¬²¢½«¸÷×Ö¶Î¸´ÖÆµ½ casts Êı×éÖĞ¡£
- * ²ÎÊı£º
- *    json  - ´ı½âÎöµÄ JSON ×Ö·û´®
- *    casts - ´æ´¢½âÎö½á¹ûµÄ cast Êı×é£¨´óĞ¡±ØĞë²»Ğ¡ÓÚ CAST_COUNT£©
- * ·µ»ØÖµ£º
- *    0   - ³É¹¦
- *    ·Ç0 - ²»Í¬ÊıÖµ´ú±í²»Í¬³ö´í²½Öè£¨ÀıÈç£º1 ´ú±í½âÎö´íÎó£¬2 ´ú±í¸ù½Úµã²»ÊÇ¶ÔÏó£¬¡­£©
+ * å‡½æ•°ï¼šparse_casts
+ * ä½œç”¨ï¼šä½¿ç”¨ jsmn è§£æä¼ å…¥çš„ JSON å­—ç¬¦ä¸²ï¼Œä»ä¸­æå–å‡º 4 ä¸ª cast å¯¹è±¡ï¼Œå¹¶å°†å„å­—æ®µå¤åˆ¶åˆ° casts æ•°ç»„ä¸­ã€‚
+ * å‚æ•°ï¼š
+ *    json  - å¾…è§£æçš„ JSON å­—ç¬¦ä¸²
+ *    casts - å­˜å‚¨è§£æç»“æœçš„ cast æ•°ç»„ï¼ˆå¤§å°å¿…é¡»ä¸å°äº CAST_COUNTï¼‰
+ * è¿”å›å€¼ï¼š
+ *    0   - æˆåŠŸ
+ *    é0 - ä¸åŒæ•°å€¼ä»£è¡¨ä¸åŒå‡ºé”™æ­¥éª¤ï¼ˆä¾‹å¦‚ï¼š1 ä»£è¡¨è§£æé”™è¯¯ï¼Œ2 ä»£è¡¨æ ¹èŠ‚ç‚¹ä¸æ˜¯å¯¹è±¡ï¼Œâ€¦ï¼‰
  */
 uint8_t parse_casts(const char *json, cast_t casts[CAST_COUNT])
 {
@@ -206,47 +341,47 @@ uint8_t parse_casts(const char *json, cast_t casts[CAST_COUNT])
 	token_count = jsmn_parse(&parser, json, strlen(json), tokens, sizeof(tokens) / sizeof(tokens[0]));
 	if (token_count < 0)
 	{
-		return 1; // ½âÎö´íÎó
+		return 1; // è§£æé”™è¯¯
 	}
 	if (token_count < 1 || tokens[0].type != JSMN_OBJECT)
 	{
-		return 2; // ¸ù½Úµã²»ÊÇ¶ÔÏó
+		return 2; // æ ¹èŠ‚ç‚¹ä¸æ˜¯å¯¹è±¡
 	}
 
-	/* ²éÕÒ¸ù¶ÔÏóÖĞµÄ "forecasts" ¼ü */
-	pos = 1;					   // ´ÓµÚ 1 ¸ö token ¿ªÊ¼£¨token[0] ÎªÕû¸ö¶ÔÏó£©
-	int num_keys = tokens[0].size; // ¸ù¶ÔÏóÖĞ¼üÖµ¶ÔµÄÊıÁ¿
+	/* æŸ¥æ‰¾æ ¹å¯¹è±¡ä¸­çš„ "forecasts" é”® */
+	pos = 1;					   // ä»ç¬¬ 1 ä¸ª token å¼€å§‹ï¼ˆtoken[0] ä¸ºæ•´ä¸ªå¯¹è±¡ï¼‰
+	int num_keys = tokens[0].size; // æ ¹å¯¹è±¡ä¸­é”®å€¼å¯¹çš„æ•°é‡
 	int forecasts_index = -1;
 	for (i = 0; i < num_keys; i++)
 	{
 		if (jsoneq(json, &tokens[pos], "forecasts") == 0)
 		{
-			forecasts_index = pos + 1; // forecasts µÄÖµ token Ë÷Òı
+			forecasts_index = pos + 1; // forecasts çš„å€¼ token ç´¢å¼•
 			break;
 		}
-		pos += 2; // Ã¿¸ö¼üÖµ¶ÔÕ¼ 2 ¸ö token
+		pos += 2; // æ¯ä¸ªé”®å€¼å¯¹å  2 ä¸ª token
 	}
 	if (forecasts_index == -1)
 	{
-		return 3; // Ã»ÓĞÕÒµ½ "forecasts" ¼ü
+		return 3; // æ²¡æœ‰æ‰¾åˆ° "forecasts" é”®
 	}
 	if (tokens[forecasts_index].type != JSMN_ARRAY)
 	{
-		return 4; // "forecasts" ¶ÔÓ¦µÄÖµ²»ÊÇÊı×é
+		return 4; // "forecasts" å¯¹åº”çš„å€¼ä¸æ˜¯æ•°ç»„
 	}
 	if (tokens[forecasts_index].size < 1)
 	{
-		return 5; // "forecasts" Êı×éÎª¿Õ
+		return 5; // "forecasts" æ•°ç»„ä¸ºç©º
 	}
 
-	/* È¡ forecasts Êı×éÖĞµÚ 1 ¸öÔªËØ£¨forecast ¶ÔÏó£© */
+	/* å– forecasts æ•°ç»„ä¸­ç¬¬ 1 ä¸ªå…ƒç´ ï¼ˆforecast å¯¹è±¡ï¼‰ */
 	int forecast_index = forecasts_index + 1;
 	if (tokens[forecast_index].type != JSMN_OBJECT)
 	{
-		return 6; // forecast ÔªËØ²»ÊÇ¶ÔÏó
+		return 6; // forecast å…ƒç´ ä¸æ˜¯å¯¹è±¡
 	}
 
-	/* ÔÚ forecast ¶ÔÏóÖĞ²éÕÒ "casts" ¼ü */
+	/* åœ¨ forecast å¯¹è±¡ä¸­æŸ¥æ‰¾ "casts" é”® */
 	int forecast_obj_size = tokens[forecast_index].size;
 	pos = forecast_index + 1;
 	int casts_index = -1;
@@ -254,34 +389,34 @@ uint8_t parse_casts(const char *json, cast_t casts[CAST_COUNT])
 	{
 		if (jsoneq(json, &tokens[pos], "casts") == 0)
 		{
-			casts_index = pos + 1; // casts Êı×éµÄ token Ë÷Òı
+			casts_index = pos + 1; // casts æ•°ç»„çš„ token ç´¢å¼•
 			break;
 		}
 		pos += 2;
 	}
 	if (casts_index == -1)
 	{
-		return 7; // Ã»ÓĞÕÒµ½ "casts" ¼ü
+		return 7; // æ²¡æœ‰æ‰¾åˆ° "casts" é”®
 	}
 	if (tokens[casts_index].type != JSMN_ARRAY)
 	{
-		return 8; // "casts" ¶ÔÓ¦µÄÖµ²»ÊÇÊı×é
+		return 8; // "casts" å¯¹åº”çš„å€¼ä¸æ˜¯æ•°ç»„
 	}
 	if (tokens[casts_index].size != CAST_COUNT)
 	{
-		return 9; // "casts" Êı×éÄÚµÄ¶ÔÏóÊıÁ¿²»ÊÇ 4 ¸ö
+		return 9; // "casts" æ•°ç»„å†…çš„å¯¹è±¡æ•°é‡ä¸æ˜¯ 4 ä¸ª
 	}
 
-	/* ½âÎö casts Êı×éÄÚµÄÃ¿¸ö cast ¶ÔÏó */
-	pos = casts_index + 1; // Ö¸ÏòµÚÒ»¸ö cast ¶ÔÏó
+	/* è§£æ casts æ•°ç»„å†…çš„æ¯ä¸ª cast å¯¹è±¡ */
+	pos = casts_index + 1; // æŒ‡å‘ç¬¬ä¸€ä¸ª cast å¯¹è±¡
 	for (i = 0; i < CAST_COUNT; i++)
 	{
 		if (tokens[pos].type != JSMN_OBJECT)
 		{
-			return 10; // ÆÚÍû cast ¶ÔÏó
+			return 10; // æœŸæœ› cast å¯¹è±¡
 		}
 		int cast_obj_size = tokens[pos].size;
-		/* Ã¿¸ö¶ÔÏó°üº¬ cast_obj_size ¸ö¼üÖµ¶Ô£¬½ÓÏÂÀ´Á¬ĞøÓĞ 2*cast_obj_size ¸ö token */
+		/* æ¯ä¸ªå¯¹è±¡åŒ…å« cast_obj_size ä¸ªé”®å€¼å¯¹ï¼Œæ¥ä¸‹æ¥è¿ç»­æœ‰ 2*cast_obj_size ä¸ª token */
 		int obj_end = pos + 1 + cast_obj_size * 2;
 		int j;
 		for (j = pos + 1; j < obj_end; j += 2)
@@ -374,10 +509,16 @@ uint8_t parse_casts(const char *json, cast_t casts[CAST_COUNT])
 				casts[i].nighttemp_float[len] = '\0';
 			}
 		}
-		pos = obj_end; // Ö¸ÏòÏÂÒ»¸ö cast ¶ÔÏó
+		pos = obj_end; // æŒ‡å‘ä¸‹ä¸€ä¸ª cast å¯¹è±¡
 	}
 
-	return 0; // ³É¹¦
+	/*æ£€éªŒ*/
+	if (casts[0].date[0] != '2' || casts[0].date[1] != '0')
+	{
+		return 11;
+	}
+
+	return 0; // æˆåŠŸ
 }
 uint8_t Weather_Parse(void)
 {
