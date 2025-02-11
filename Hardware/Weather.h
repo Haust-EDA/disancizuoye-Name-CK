@@ -25,15 +25,11 @@ typedef struct
     char nighttemp_float[8];      // 夜间温度浮点数
 } cast_t;
 
-extern uint8_t Esp_isConnect;
-extern uint8_t RxData[2048]; // 接收数据缓存区
-
 extern uint16_t RxIndex;                // 接收数据的字节数
 extern cast_t WeatherCasts[CAST_COUNT]; // 存储天气预报数据的数组
 extern uint8_t WeatherIsGet;            // 天气数据是否获取成功
 
 void ESP_Init(void);
-void ESP_Connect(void);
+uint8_t ESP_Connect(void);
 
-uint8_t Weather_Parse(void);
 #endif

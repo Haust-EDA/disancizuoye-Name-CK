@@ -9,35 +9,20 @@
 #include "LCD.h"
 
 extern uint32_t TimeTick;
+uint8_t Weather_Parse(void);
+/* 全局变量 */
+uint8_t RxData[2048]; // 接收数据缓存区
+uint16_t RxIndex = 0; // 接收数据的字节
 
+cast_t WeatherCasts[CAST_COUNT]; // 天气数据
+uint8_t WeatherIsGet = 0;		 // 天气数据是否已经获取
+
+/********	串口相关	*********/
 // USART 1
 #define USART1_StopBits USART_StopBits_1	  // 停止位 1
 #define USART1_WordLength USART_WordLength_8b // 数据位 8
 #define USART1_Parity USART_Parity_No		  // 校验位 NONE
 #define USART1_BaudRate 115200				  // 波特率
-
-/* 全局变量 */
-uint8_t RxData[2048]; // 接收数据缓存区
-
-uint16_t RxIndex = 0; // 接收数据的字节数
-uint8_t Esp_isConnect = 1;
-uint8_t WeatherIsGet = 0;
-cast_t WeatherCasts[CAST_COUNT];
-
-// /**
-//  * @brief 格式化字符串
-//  */
-// uint8_t *Strf(char *format, ...)
-// {
-// 	static char String[255];
-// 	// 格式化字符
-// 	va_list arg;
-// 	va_start(arg, format);
-// 	vsprintf(String, format, arg);
-// 	va_end(arg);
-// 	// 返回字符串指针
-// 	return (uint8_t *)String;
-// }
 
 /**
  * @brief   发送数组(类型 uint8_t)
@@ -131,6 +116,9 @@ void USART1_Init(void)
 
 	USART_Cmd(USART1, ENABLE);
 }
+/**
+ * @brief 串口中断函数
+ */
 void USART1_IRQHandler(void)
 {
 	if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET)
@@ -144,22 +132,34 @@ void USART1_IRQHandler(void)
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
 }
-/************************************************/
+
+/********	ESP8266相关	*********/
+/**
+ * @brief	ESP8266 初始化
+ * @return	无
+ */
 void ESP_Init(void)
 {
 	USART1_Init();
 }
-
-void ESP_Connect(void)
+/**
+ * @brief	发送命令，获取天气json
+ * @return	执行到的步骤数
+ */
+uint8_t ESP_Connect(void)
 {
-	static uint8_t cfunState = 0;
-	static uint32_t startTime0 = 0;
-	static uint32_t startTime = 0;
-	static uint8_t state = 0;
+	static uint8_t cfunState = 0;	// 函数运行状态;0xF0:结束
+	static uint32_t startTime0 = 0; // 函数前一次触发的时间
+	static uint32_t startTime = 0;	// 命令发送的时间
+	static uint8_t flagReset = 0;	// ESP8266重置标志
 
-	if (TimeTick - startTime0 < 5 || cfunState == 0xFF)
+	if (cfunState == 0xF0) // 函数结束
 	{
-		return;
+		return 0xF0;
+	}
+	else if (TimeTick - startTime0 < 5) // 函数触发时间间隔不足
+	{
+		return 0xFF;
 	}
 	startTime0 = TimeTick;
 
@@ -170,7 +170,7 @@ void ESP_Connect(void)
 		SerialWrite((uint8_t *)"AT+RST\r\n", 8);
 		startTime = TimeTick;
 		cfunState++;
-		state = 0;
+		flagReset = 0;
 	case 1: // WIFI连接
 		if (strstr((char *)&RxData[600], "GOT IP") != NULL)
 		{
@@ -178,8 +178,9 @@ void ESP_Connect(void)
 		}
 		else if (TimeTick - startTime > 5000)
 		{
+			// 关闭穿透,重置ESP8266
 			cfunState = 12;
-			state = 1;
+			flagReset = 1;
 		}
 		break;
 	case 2: // 关闭回显
@@ -194,6 +195,7 @@ void ESP_Connect(void)
 		}
 		else if (TimeTick - startTime > 5000)
 		{
+			// 重置ESP8266
 			cfunState = 0;
 		}
 		break;
@@ -209,6 +211,7 @@ void ESP_Connect(void)
 		}
 		else if (TimeTick - startTime > 5000)
 		{
+			// 重置ESP8266
 			cfunState = 0;
 		}
 		break;
@@ -224,8 +227,9 @@ void ESP_Connect(void)
 		}
 		else if (TimeTick - startTime > 5000)
 		{
+			// 关闭穿透,重置ESP8266
 			cfunState = 12;
-			state = 1;
+			flagReset = 1;
 		}
 		break;
 	case 8:
@@ -240,8 +244,9 @@ void ESP_Connect(void)
 		}
 		else if (TimeTick - startTime > 5000)
 		{
+			// 关闭穿透,重置ESP8266
 			cfunState = 12;
-			state = 1;
+			flagReset = 1;
 		}
 		break;
 	case 10: // 发送 HTTP 请求
@@ -256,10 +261,10 @@ void ESP_Connect(void)
 			WeatherIsGet = 1;
 		}
 		else if (TimeTick - startTime > 5000)
-
 		{
+			// 关闭穿透,重置ESP8266
 			cfunState = 12;
-			state = 1;
+			flagReset = 1;
 		}
 		break;
 	case 12: // 关闭穿透
@@ -271,8 +276,8 @@ void ESP_Connect(void)
 		if (TimeTick - startTime > 1000)
 		{
 			SerialWrite((uint8_t *)"AT+CIPMODE=0\r\n", 14);
-			cfunState = 0xFF;
-			if (state == 1)
+			cfunState = 0xF0; // 结束
+			if (flagReset == 1)
 			{
 				cfunState = 0;
 			}
@@ -281,54 +286,33 @@ void ESP_Connect(void)
 	default:
 		break;
 	}
+	return cfunState;
 }
 
-// void ESP_Connect(void)
-// {
-// 	SerialWrite((uint8_t *)"AT+RST\r\n", 8);
-// 	Delay_s(6);
-// 	RxIndex = 0;
-// 	SerialWrite((uint8_t *)"ATE0\r\n", 6);
-// 	Delay_ms(200);
-// 	RxIndex = 0;
-// 	SerialWrite((uint8_t *)"AT+CIPSTART=\"TCP\",\"restapi.amap.com\",80\r\n", 42);
-// 	Delay_s(2);
-// 	SerialWrite((uint8_t *)"AT+CIPMODE=1\r\n", 14);
-// 	Delay_ms(300);
-// 	SerialWrite((uint8_t *)"AT+CIPSEND\r\n", 12);
-// 	Delay_ms(300);
-// 	RxIndex = 0;
-// 	Esp_isRx = 1;
-// 	SerialWrite((uint8_t *)"GET http://restapi.amap.com/v3/weather/weatherInfo?key=9e78f303567d7abf2520e4ff9b930acb&city=411402&extensions=all\n", 117);
-// 	Delay_s(1);
-// }
-
-/***************************************/
-
-/*
- * 辅助函数：判断 token 表示的字符串是否等于 s
- * 返回 0 表示相等，非 0 表示不相等
+/********	JSON相关	*********/
+/**
+ * @brief 判断 token 表示的字符串是否等于 s
+ * @param json	待解析的 JSON 字符串
+ * @param tok	待判断的 token
+ * @param s		待比较的字符串
+ * @return 0 表示相等，非 0 表示不相等
  */
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s)
 {
-	if (tok->type == JSMN_STRING &&
-		(int)strlen(s) == tok->end - tok->start &&
-		strncmp(json + tok->start, s, tok->end - tok->start) == 0)
+	if (tok->type == JSMN_STRING &&								   // 检查token的类型是否为字符串
+		(int)strlen(s) == tok->end - tok->start &&				   // 检查字符串长度是否相同
+		strncmp(json + tok->start, s, tok->end - tok->start) == 0) // 字符串是否相同
 	{
 		return 0;
 	}
 	return -1;
 }
 
-/*
- * 函数：parse_casts
- * 作用：使用 jsmn 解析传入的 JSON 字符串，从中提取出 4 个 cast 对象，并将各字段复制到 casts 数组中。
- * 参数：
- *    json  - 待解析的 JSON 字符串
- *    casts - 存储解析结果的 cast 数组（大小必须不小于 CAST_COUNT）
- * 返回值：
- *    0   - 成功
- *    非0 - 不同数值代表不同出错步骤（例如：1 代表解析错误，2 代表根节点不是对象，…）
+/**
+ * @brief 解析 JSON 字符串，从中提取出 4 个 cast 对象，并将各字段复制到 casts 数组中。
+ * @param json 待解析的 JSON 字符串
+ * @param casts 存储解析结果的 cast 数组（大小必须不小于 CAST_COUNT）
+ * @return 0 成功，其他值代表不同出错步骤
  */
 uint8_t parse_casts(const char *json, cast_t casts[CAST_COUNT])
 {
@@ -520,6 +504,11 @@ uint8_t parse_casts(const char *json, cast_t casts[CAST_COUNT])
 
 	return 0; // 成功
 }
+
+/**
+ * @brief 解析JSON,获取天气预报信息
+ * @return 0 成功，其他值失败
+ */
 uint8_t Weather_Parse(void)
 {
 	for (uint8_t i = 0; i < CAST_COUNT; i++)

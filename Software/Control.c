@@ -131,7 +131,7 @@ void C_LEDShowData(void)
 		LCD_ShowChar(5 + 8 * 13, 15 + 22 * 0, '4', BLACK, WHITE, 16, 0);
 		break;
 	case 5:
-		LCD_ShowString(5 + 8 * 12.5, 15 + 22 * 0, "ON", BLACK, WHITE, 16, 0);
+		LCD_ShowString(5 + 8 * 12, 15 + 22 * 0, "ALL", BLACK, WHITE, 16, 0);
 		break;
 	default:
 		break;
