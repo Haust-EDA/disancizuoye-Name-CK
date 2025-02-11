@@ -12,7 +12,7 @@
 
 #include "stm32f10x.h" // Device header
 
-#define KEYSETTIME 400 // 长按最低时间
+#define KEYSETTIME 350 // 长按最低时间
 
 // 管脚定义
 #define C1 GPIO_Pin_4 // GPIOB
@@ -144,8 +144,10 @@ void Key_Tick(void)
 	if (Count1 >= 20) // 20ms判断一次
 	{
 		Count1 = 0; // 时间间隔计数清零
+
 		PrevState = CurrState;
-		CurrState = Key_GetState();
+		CurrState = Key_GetState(); // 获取当前时刻的键值
+
 		if (PrevState == CurrState && PrevState != 0) // 按键状态持续且按下
 		{
 			Key_State = 1; // 短按
@@ -158,6 +160,7 @@ void Key_Tick(void)
 		if (CurrState == 0 && PrevState != 0) // 按键状态变化(现在松手而之前按下)
 		{
 			Key_Num = PrevState;
+			Key_Time = 0;
 		}
 	}
 }
