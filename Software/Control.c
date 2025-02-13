@@ -241,37 +241,40 @@ void C_LEDKey(void)
 uint8_t C_Cal_State = 0;	  // 计算器状态(1:输入状态,2:结果状态,3:历史状态)
 uint8_t C_CalShow_HIndex = 0; // 历史显示索引
 
+void C_CalShowRefesh(void); // 显示刷新
+
 void C_CalShow(void) // C_ShowIndex->2
 {
 	C_Cal_State = 1;
 	LCD_ShowString(0, 0, "Calculator", GREEN, WHITE, 12, 0); // 标题
-	LCD_ShowString(0, 10, "<", BLACK, WHITE, 24, 0);
+	C_CalShowRefesh();
 }
 /**
  * @brief 显示内容刷新
  */
-void C_CalShowRe(void)
+void C_CalShowRefesh(void)
 {
 	if (C_Cal_State == 1)
 	{
-		uint8_t showRow = ((CalStrIn_Index - 1) / _C_CAL_SHOW_COL) % _C_CAL_SHOW_ROW;
-		uint8_t showCol = (CalStrIn_Index - 1) % _C_CAL_SHOW_COL;
-		uint16_t show_x = 0 + 16 * showCol, show_y = 10 + 22 * showRow;
-		char c = CalStrIn[CalStrIn_Index - 1];
-		LCD_ShowChar(show_x, show_y, c, BLACK, WHITE, 24, 0);
+		uint8_t showIndex = 0;
+		uint8_t showRow = 0;
+		uint8_t showCol = 0;
 
-		showRow = (CalStrIn_Index / _C_CAL_SHOW_COL) % _C_CAL_SHOW_ROW;
-		showCol = CalStrIn_Index % _C_CAL_SHOW_COL;
-		show_x = 0 + 16 * showCol, show_y = 10 + 22 * showRow;
-		if (CalStrIn_Index == STRIN_MAX_LENGTH - 1)
+		while (CalStrIn[showIndex] != '\0')
 		{
-			c = '|';
+			LCD_ShowChar(0 + 16 * showCol, 10 + 22 * showRow, CalStrIn[showIndex], BLACK, WHITE, 24, 0);
+			showIndex++;
+			showCol++;
+			if (showCol == _C_CAL_SHOW_COL)
+			{
+				showCol = 0;
+				showRow++;
+			}
 		}
-		else
+		if (CalStrIn_Index != STRIN_MAX_LENGTH - 1)
 		{
-			c = '<';
+			LCD_ShowChar(0 + 16 * showCol, 10 + 22 * showRow, '<', RED, WHITE, 24, 0);
 		}
-		LCD_ShowChar(show_x, show_y, c, BLACK, WHITE, 24, 0);
 	}
 }
 /**
@@ -422,7 +425,8 @@ void C_CalKey(void)
 		case 12:
 			if (KeyState == 2)
 			{
-				temp = Cal_StrInAdd('^');
+				temp = Cal_StrInAdd('*');
+				temp = Cal_StrInAdd('*');
 			}
 			else
 			{
@@ -436,18 +440,25 @@ void C_CalKey(void)
 			temp = Cal_StrInAdd('.');
 			break;
 		case 15:
-			temp = Cal_StrInAdd('=');
 			C_Cal_State = 2;
 			break;
 		case 16:
-			temp = Cal_StrInAdd('+');
+			if (KeyState == 2)
+			{
+				temp = Cal_StrInAdd('%');
+			}
+			else
+			{
+				temp = Cal_StrInAdd('+');
+			}
+
 			break;
 		default:
 			break;
 		}
 		if (temp == 0)
 		{
-			C_CalShowRe();
+			C_CalShowRefesh();
 		}
 		if (C_Cal_State == 2)
 		{
@@ -460,7 +471,7 @@ void C_CalKey(void)
 		LCD_Fill(0, 0, 160, 128, WHITE);
 		C_CalShow();
 	}
-	else if (C_Cal_State == 3)
+	else if (C_Cal_State == 3) // 处于 查看历史 状态
 	{
 		switch (KeyNum)
 		{
@@ -768,8 +779,4 @@ void C_Refresh(void)
 		C_SWShowTime0();
 	}
 	LED_Refresh();
-	// if (C_ShowIndex == 1)
-	// {
-	//
-	// }
 }
