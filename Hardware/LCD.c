@@ -67,20 +67,20 @@ void LCD_GPIO_Init(void)
 
 void LCD_Writ_Bus(uint8_t dat)
 {
-	// 1. 使能片选，开始通信
+	// 使能片选，开始通信
 	LCD_CS_Clr();
 
-	// 2. 发送数据到 SPI
+	// 发送数据到 SPI
 	SPI1->DR = dat;
 	// SPI_I2S_SendData(SPI1, dat); // 将数据写入 SPI 数据寄存器，启动发送
 
-	// 3. 等待数据传输完成
+	// 等待数据传输完成
 	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_TXE) == RESET)
 		; // 等待发送缓冲区为空
 	while (SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) == SET)
 		; // 等待 SPI 总线空闲
 
-	// 4. 取消片选，结束通信
+	// 取消片选，结束通信
 	LCD_CS_Set();
 }
 

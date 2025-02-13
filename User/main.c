@@ -6,6 +6,7 @@
 #include "LED.h"
 #include "Weather.h"
 #include "Control.h"
+#include "expr.h"
 
 uint32_t TimeTick = 0;
 uint8_t KeyNum = 0, KeyState = 0;
@@ -41,8 +42,8 @@ int main(void)
 		KeyNum = Key_GetNum(&KeyState);
 		if (KeyNum != 0)
 		{
-			// LCD_ShowIntNum(0, 0, KeyNum, 2, BLACK, WHITE, 16); // 显示按键状态
-			// LCD_ShowIntNum(24, 0, KeyState, 2, BLACK, WHITE, 16);
+			LCD_ShowIntNum(160 - 8 * 2, 128 - 16, KeyNum, 2, BLACK, WHITE, 16); // 显示按键状态
+			LCD_ShowIntNum(160 - 8 * 2, 128 - 16 * 2, KeyState, 2, BLACK, WHITE, 16);
 			switch (C_ShowIndex)
 			{
 			case 0:

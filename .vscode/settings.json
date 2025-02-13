@@ -63,6 +63,7 @@
         "sstream": "c",
         "*.tcc": "c",
         "weather.h": "c",
-        "jsmn.h": "c"
+        "jsmn.h": "c",
+        "expr.h": "c"
     }
 }
