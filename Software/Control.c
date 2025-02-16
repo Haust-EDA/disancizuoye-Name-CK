@@ -354,107 +354,141 @@ void C_Cal_ShowHistory(void)
 
 void C_CalKey(void)
 {
-	if (KeyNum == 14 && KeyState == 2) // 长按退出
-	{
-		Cal_Exit();
-		C_ShowIndex = 0;
-		LCD_Fill(0, 0, 160, 128, WHITE);
-		C_MenuShow();
-		return;
-	}
 	uint8_t temp = 1;
 	if (C_Cal_State == 1) // 输入状态
 	{
-		switch (KeyNum)
+		if (KeyState == 1) // 短按
 		{
-		case 1:
-			if (KeyState == 2)
+			switch (KeyNum)
 			{
+			case 1:
+				temp = Cal_StrInAdd('7');
+				break;
+			case 2:
+				temp = Cal_StrInAdd('8');
+				break;
+			case 3:
+				temp = Cal_StrInAdd('9');
+				break;
+			case 4:
+				temp = Cal_StrInAdd('/');
+				break;
+			case 5:
+				temp = Cal_StrInAdd('4');
+				break;
+			case 6:
+				temp = Cal_StrInAdd('5');
+				break;
+			case 7:
+				temp = Cal_StrInAdd('6');
+				break;
+			case 8:
+				temp = Cal_StrInAdd('*');
+				break;
+			case 9:
+				temp = Cal_StrInAdd('1');
+				break;
+			case 10:
+				temp = Cal_StrInAdd('2');
+				break;
+			case 11:
+				temp = Cal_StrInAdd('3');
+				break;
+			case 12:
+				temp = Cal_StrInAdd('-');
+				break;
+			case 13:
+				temp = Cal_StrInAdd('0');
+				break;
+			case 14:
+				temp = Cal_StrInAdd('.');
+				break;
+			case 15: // 计算
+				C_Cal_State = 2;
+				break;
+			case 16:
+				temp = Cal_StrInAdd('+');
+				break;
+			default:
+				break;
+			}
+		}
+		else if (KeyState == 2) // 长按
+		{
+			switch (KeyNum)
+			{
+			case 1: // 查看历史记录
 				LCD_Fill(0, 0, 160, 128, WHITE);
 				C_CalShow_HIndex = CalHIndex;
 				C_Cal_ShowHistory();
 				C_Cal_State = 3;
 				return;
-			}
-			temp = Cal_StrInAdd('7');
-			break;
-		case 2:
-			temp = Cal_StrInAdd('8');
-			break;
-		case 3:
-			temp = Cal_StrInAdd('9');
-			break;
-		case 4:
-			if (KeyState == 2)
-			{
+				// break;
+			case 2: // 阶乘fac
+				Cal_StrInAdd('f');
+				Cal_StrInAdd('a');
+				Cal_StrInAdd('c');
 				temp = Cal_StrInAdd('(');
-			}
-			else
-			{
-				temp = Cal_StrInAdd('/');
-			}
-			break;
-		case 5:
-			temp = Cal_StrInAdd('4');
-			break;
-		case 6:
-			temp = Cal_StrInAdd('5');
-			break;
-		case 7:
-			temp = Cal_StrInAdd('6');
-			break;
-		case 8:
-			if (KeyState == 2)
-			{
+				break;
+			case 3: // sin
+				Cal_StrInAdd('s');
+				Cal_StrInAdd('i');
+				Cal_StrInAdd('n');
+				temp = Cal_StrInAdd('(');
+				break;
+			case 4: // (
+				temp = Cal_StrInAdd('(');
+				break;
+			case 6: // 排列
+				Cal_StrInAdd('n');
+				Cal_StrInAdd('c');
+				Cal_StrInAdd('r');
+				temp = Cal_StrInAdd('(');
+				break;
+			case 7: // cos
+				Cal_StrInAdd('c');
+				Cal_StrInAdd('o');
+				Cal_StrInAdd('s');
+				temp = Cal_StrInAdd('(');
+				break;
+			case 8: // )
 				temp = Cal_StrInAdd(')');
-			}
-			else
-			{
-				temp = Cal_StrInAdd('*');
-			}
-			break;
-		case 9:
-			temp = Cal_StrInAdd('1');
-			break;
-		case 10:
-			temp = Cal_StrInAdd('2');
-			break;
-		case 11:
-			temp = Cal_StrInAdd('3');
-			break;
-		case 12:
-			if (KeyState == 2)
-			{
-				temp = Cal_StrInAdd('*');
-				temp = Cal_StrInAdd('*');
-			}
-			else
-			{
-				temp = Cal_StrInAdd('-');
-			}
-			break;
-		case 13:
-			temp = Cal_StrInAdd('0');
-			break;
-		case 14:
-			temp = Cal_StrInAdd('.');
-			break;
-		case 15:
-			C_Cal_State = 2;
-			break;
-		case 16:
-			if (KeyState == 2)
-			{
+				break;
+			case 10: // 组合
+				Cal_StrInAdd('n');
+				Cal_StrInAdd('p');
+				Cal_StrInAdd('r');
+				temp = Cal_StrInAdd('(');
+				break;
+			case 11: // tan
+				Cal_StrInAdd('t');
+				Cal_StrInAdd('a');
+				Cal_StrInAdd('n');
+				temp = Cal_StrInAdd('(');
+				break;
+			case 12: // ^
+				temp = Cal_StrInAdd('^');
+				break;
+			case 13: // ,
+				temp = Cal_StrInAdd(',');
+				break;
+			case 14: // 退出
+				Cal_Exit();
+				C_ShowIndex = 0;
+				LCD_Fill(0, 0, 160, 128, WHITE);
+				C_MenuShow();
+				return;
+				// break;
+			case 15: // pi
+				Cal_StrInAdd('p');
+				temp = Cal_StrInAdd('i');
+				break;
+			case 16: // 取模
 				temp = Cal_StrInAdd('%');
+				break;
+			default:
+				break;
 			}
-			else
-			{
-				temp = Cal_StrInAdd('+');
-			}
-
-			break;
-		default:
-			break;
 		}
 		if (temp == 0)
 		{
