@@ -251,7 +251,7 @@ uint8_t ESP_Connect(void)
 		break;
 	case 10: // 发送 HTTP 请求
 		RxIndex = 0;
-		SerialWrite((uint8_t *)"GET http://restapi.amap.com/v3/weather/weatherInfo?key=9e78f303567d7abf2520e4ff9b930acb&city=411402&extensions=all\n", 117);
+		SerialWrite((uint8_t *)"GET http://restapi.amap.com/v3/weather/weatherInfo?key=9e78f303567d7abf2520e4ff9b930acb&city=410311&extensions=all\n", 117);
 		startTime = TimeTick;
 		cfunState++;
 	case 11: // 数据处理

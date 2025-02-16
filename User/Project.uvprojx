@@ -788,6 +788,16 @@
               <FileType>5</FileType>
               <FilePath>..\Software\expr.h</FilePath>
             </File>
+            <File>
+              <FileName>tinyexpr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Software\tinyexpr.c</FilePath>
+            </File>
+            <File>
+              <FileName>tinyexpr.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Software\tinyexpr.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

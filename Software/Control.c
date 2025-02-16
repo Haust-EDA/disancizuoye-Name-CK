@@ -631,7 +631,7 @@ uint8_t C_Weather_csatIndex = 0;
 void C_WeatherShow(void) // C_ShowIndex->4
 {
 	/*固定内容*/
-	LCD_ShowChinese(0, 0, "商丘", BLACK, WHITE, 24, 0);
+	LCD_ShowChinese(0, 0, "洛阳", BLACK, WHITE, 24, 0);
 	LCD_DrawLine(49, 0, 49, 25, BLACK);
 	LCD_DrawLine(0, 25, 160, 25, BLACK);
 	// 白天

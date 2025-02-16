@@ -64,6 +64,12 @@
         "*.tcc": "c",
         "weather.h": "c",
         "jsmn.h": "c",
-        "expr.h": "c"
+        "expr.h": "c",
+        "algorithm": "c",
+        "stddef.h": "c",
+        "typeinfo": "c",
+        "limits.h": "c",
+        "tinyexpr.h": "c",
+        "numeric": "c"
     }
 }
