@@ -14,7 +14,10 @@ extern uint8_t CalHStrIndex[CAL_MAX_HISTORY];           // 表达式字符索引
 extern double CalHRes[CAL_MAX_HISTORY];                 // 结果历史记录
 extern uint8_t CalHIndex;                               // 历史记录索引
 
+// TODO改用结构体储存历史记录
+
 uint8_t Cal_StrInAdd(char c);
+uint8_t Cal_StrInDel(void);
 uint8_t Cal_Run(void);
 
 void Cal_Exit(void);

@@ -38,6 +38,21 @@ uint8_t Cal_StrInAdd(char c)
 	return 0;
 }
 /**
+ * @brief 删除CalStrIn中的最后一个字符
+ * @return 0:成功 1:失败
+ */
+uint8_t Cal_StrInDel(void)
+{
+	if (CalStrIn_Index == 0)
+	{
+		return 1;
+	}
+	CalStrIn_Index--;
+	CalStrIn[CalStrIn_Index] = '\0';
+	return 0;
+}
+
+/**
  * @brief 重置计数器
  * @return 无
  */

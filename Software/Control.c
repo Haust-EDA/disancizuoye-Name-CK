@@ -274,6 +274,14 @@ void C_CalShowRefesh(void)
 		if (CalStrIn_Index != STRIN_MAX_LENGTH - 1)
 		{
 			LCD_ShowChar(0 + 16 * showCol, 10 + 22 * showRow, '<', RED, WHITE, 24, 0);
+			showIndex++;
+			showCol++;
+			if (showCol == _C_CAL_SHOW_COL)
+			{
+				showCol = 0;
+				showRow++;
+			}
+			LCD_ShowChar(0 + 16 * showCol, 10 + 22 * showRow, ' ', WHITE, WHITE, 24, 0);
 		}
 	}
 }
@@ -438,6 +446,9 @@ void C_CalKey(void)
 				break;
 			case 4: // (
 				temp = Cal_StrInAdd('(');
+				break;
+			case 5:
+				temp = Cal_StrInDel();
 				break;
 			case 6: // 排列
 				Cal_StrInAdd('n');
