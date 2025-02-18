@@ -34,7 +34,7 @@ const uint16_t KRows[] = {R1, R2, R3, R4}; // 行GPIO
 uint8_t Key_Num = 0;
 uint8_t Key_State = 0;	  // 按键状态(0:无按键,1:短按,2:长按)
 uint16_t Key_Time = 0;	  // 按键按下的时间
-static uint8_t CurrState; // 按键状态:当前，
+uint8_t CurrState;		  // 按键状态:当前，
 static uint8_t PrevState; // 按键状态:前一刻
 
 /**
@@ -116,7 +116,7 @@ uint8_t Key_GetState(void)
 
 	if (PrevState != 0) // 如果前一刻是按下状态，则检测对应行
 	{
-		Temp = Key_ScanRow(PrevState / KNumCol);
+		Temp = Key_ScanRow((PrevState - 1) / KNumCol);
 	}
 	if (Temp != 0)
 	{
