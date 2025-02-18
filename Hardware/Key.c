@@ -12,7 +12,7 @@
 
 #include "stm32f10x.h" // Device header
 
-#define KEYSETTIME 350 // 长按最低时间
+#define KEYSETTIME 260 // 长按最低时间
 
 // 管脚定义
 #define C1 GPIO_Pin_4 // GPIOB
@@ -34,7 +34,7 @@ const uint16_t KRows[] = {R1, R2, R3, R4}; // 行GPIO
 uint8_t Key_Num = 0;
 uint8_t Key_State = 0;	  // 按键状态(0:无按键,1:短按,2:长按)
 uint16_t Key_Time = 0;	  // 按键按下的时间
-uint8_t CurrState;		  // 按键状态:当前，
+static uint8_t CurrState; // 按键状态:当前，
 static uint8_t PrevState; // 按键状态:前一刻
 
 /**

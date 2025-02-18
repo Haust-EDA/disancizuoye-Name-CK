@@ -6,7 +6,7 @@
 #include "LED.h"
 #include "Weather.h"
 #include "Control.h"
-#include "expr.h"
+extern uint8_t CurrState;
 
 uint32_t TimeTick = 0;
 uint8_t KeyNum = 0, KeyState = 0;
@@ -23,10 +23,8 @@ void Init(void)
 	LCD_Fill(0, 0, 160, 128, WHITE);
 	C_MenuShow();
 }
-extern uint8_t LEDIndex;
 int main(void)
 {
-	extern uint8_t CalHIndex;
 	Init();
 
 	// LCD_ShowString(0, 0, "InitComplete01", BLACK, WHITE, 16, 0);
@@ -38,12 +36,12 @@ int main(void)
 		// LCD_ShowIntNum(147, 115 * 0, TimeTick / 100, 2, BLACK, WHITE, 12);
 		// LCD_ShowString(160 - 6 * 7, 0, Strf("F%03dT%02d", FPS, (TimeTick / 100) % 100), BLACK, WHITE, 12, 0);
 		// LCD_ShowString(160 - 6 * (8 + 4), 0, Strf("CS%d", CalHIndex), BLACK, WHITE, 12, 0);
-		// 刷新键值
-		KeyNum = Key_GetNum(&KeyState);
+
+		KeyNum = Key_GetNum(&KeyState); // 刷新键值
 		if (KeyNum != 0)
 		{
-			LCD_ShowIntNum(160 - 8 * 2, 128 - 16, KeyNum, 2, BLACK, WHITE, 16); // 显示按键状态
-			LCD_ShowIntNum(160 - 8 * 2, 128 - 16 * 2, KeyState, 2, BLACK, WHITE, 16);
+			// LCD_ShowIntNum(160 - 8 * 2, 128 - 16, KeyNum, 2, BLACK, WHITE, 16); // 显示按键状态
+			// LCD_ShowIntNum(160 - 8 * 2, 128 - 16 * 2, KeyState, 2, BLACK, WHITE, 16);
 			switch (C_ShowIndex)
 			{
 			case 0:

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "expr.h"
+#include "tinyexpr.h"
 
 #define USE_EXPR_
 
@@ -67,26 +67,21 @@ uint8_t Cal_HistoryAdd(void)
 	CalHIndex = CalHIndex % CAL_MAX_HISTORY + 1;
 	return CalHIndex;
 }
-
 /**
  * @brief 计算表达式
  * @return 0:失败;其它值表示历史索引
  */
 uint8_t Cal_Run(void)
 {
-	uint8_t ret = 0;
-	size_t len = strlen(CalStrIn);
-
-	// 创建expr表达式
-	struct expr *e = expr_create(CalStrIn, len, NULL, NULL);
-	if (e != NULL)
+	double temp = te_interp(CalStrIn, 0);
+	if (temp != NAN)
 	{
-		// 计算表达式的值
-		CalResult = expr_eval(e);
+		CalResult = temp;
 		Cal_StrInAdd('=');
-		ret = Cal_HistoryAdd();
+		return Cal_HistoryAdd();
 	}
-	// 释放表达式
-	expr_destroy(e, NULL);
-	return ret;
+	else
+	{
+		return 0;
+	}
 }
